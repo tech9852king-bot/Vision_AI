@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VantaVisionAI — Threat Monitoring & Aleana Voice Assistant</title>
+  <meta name="description" content="AI-powered visual monitoring, computer vision threat detection, 7-layer guarded brain orchestration, and ALEANA voice assistant.">
+  <meta property="og:title" content="VantaVisionAI — Threat Monitoring & Aleana Voice Assistant">
+  <meta property="og:description" content="AI-powered visual monitoring, computer vision threat detection, 7-layer guarded brain orchestration, and ALEANA voice assistant.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('vanta-theme') || 'dark';
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const effective = saved === 'system' ? (prefersDark ? 'dark' : 'light') : saved;
+        document.documentElement.setAttribute('data-theme', effective);
+        document.documentElement.setAttribute('data-theme-choice', saved);
+      } catch (e) {}
+    })();
+  </script>
+  <!-- TensorFlow.js and COCO-SSD MobileNet V2 for Local Browser Inference -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- Persistent Left Sidebar -->
+    <aside class="vanta-sidebar">
+      <div>
+        <div class="sidebar-brand-block">
+          <div class="brand-icon-shield">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="brand-info">
+            <div class="brand-name">
+              <span>VANTA</span><span class="accent">VISION</span>AI
+            </div>
+            <div class="brand-tagline mono">AI SECURITY OPERATIONS</div>
+          </div>
+        </div>
+
+        <!-- Navigation Menu Items -->
+        <nav class="sidebar-nav" role="tablist">
+          <button class="nav-tab nav-item active" data-view="dashboard" role="tab" title="Command Center Overview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/>
+              <rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+            </svg>
+            <span>Dashboard</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="scanner" role="tab" title="Live Vision Scanner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/>
+              <rect x="2" y="6" width="14" height="12" rx="2"/>
+            </svg>
+            <span>Live Scanner</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="events" role="tab" title="Events & Detections">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span>Events</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="incidents" role="tab" title="Security Incidents">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+              <line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>
+            </svg>
+            <span>Incidents</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="policies" role="tab" title="Security Policies">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" x2="20" y1="21" y2="21"/><line x1="4" x2="20" y1="14" y2="14"/><line x1="4" x2="20" y1="7" y2="7"/>
+              <circle cx="8" cy="7" r="2"/><circle cx="16" cy="14" r="2"/><circle cx="12" cy="21" r="2"/>
+            </svg>
+            <span>Policies</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="copilot" role="tab" title="AI Copilot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+            </svg>
+            <span>AI Copilot</span>
+          </button>
+
+          <!-- Master Voice Assistant Entry -->
+          <button class="nav-tab nav-item aleana-item" data-view="aleana" role="tab" title="Aleana Voice Assistant">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+            <span>Aleana Voice</span>
+            <span class="nav-badge mono">AI</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="brain" role="tab" title="Vanta Brain 7-Layer CLI">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>
+            </svg>
+            <span>Vanta Brain</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="audit" role="tab" title="Immutable Audit Trail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/>
+            </svg>
+            <span>Audit Trail</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="system" role="tab" title="System Diagnostics & Pipeline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+              <line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>
+            </svg>
+            <span>System</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Sidebar Status & Tenant Selector -->
+      <div class="sidebar-footer">
+        <div style="margin-bottom: 0.75rem;">
+          <label for="tenant-select" class="mono" style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 0.35rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Tenant Isolation</label>
+          <select class="vanta-select mono" id="tenant-select" style="width: 100%; font-size: 0.74rem; padding: 0.35rem 0.5rem; background: var(--bg-panel); border-color: var(--border);">
+            <option value="default" selected>default (HQ Campus)</option>
+            <option value="enterprise-alpha">enterprise-alpha (Site B)</option>
+            <option value="gov-perimeter-09">gov-perimeter-09 (Restricted)</option>
+          </select>
+        </div>
+        <div class="system-status-card">
+          <div class="pulse-dot"></div>
+          <div class="system-status-text">
+            <span class="system-status-title">System Online</span>
+            <span class="system-status-sub mono">All services running</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-main-region">
+
+      <!-- Top Header Navigation Bar -->
+      <header class="vanta-topbar">
+        <div class="topbar-left">
+          <div class="topbar-page-title" id="topbar-current-page">Command Center</div>
+          <div class="topbar-breadcrumb mono">&bull; Real-time threat surveillance</div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Backend Connectivity Indicator -->
+          <div class="env-status-pill mono" id="backend-status-indicator" title="Backend Readiness (GET /ready)">
+            <span class="live-dot" style="background: var(--accent-emerald);"></span>
+            <span id="backend-ready-label">LIVE SOC READY</span>
+          </div>
+
+          <!-- Quick "Run Intrusion Demo" button -->
+          <button class="btn btn-sm btn-primary mono" id="btn-topbar-demo-run" title="Run Threat Intrusion Simulation (POST /api/v1/demo/run)" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.65rem; font-size: 0.72rem;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Run Intrusion Demo</span>
+          </button>
+
+          <!-- Global Command Palette Trigger -->
+          <button class="btn btn-sm mono" id="btn-command-palette-trigger" title="Open Global Command Palette (Ctrl+K / ⌘K)" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.65rem; font-size: 0.72rem; border-color: var(--border-cyan);">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--cyan)" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Palette</span>
+            <kbd class="mono" style="font-size: 0.62rem; background: var(--bg-surface-elevated); padding: 1px 4px; border-radius: 3px; border: 1px solid var(--border-subtle); color: var(--cyan);">⌘K</kbd>
+          </button>
+
+          <!-- Tactical Audio Effects Mute Toggle -->
+          <button class="btn btn-sm mono" id="btn-audio-mute-toggle" title="Toggle Tactical Audio Effects & Synthesizer" style="display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; font-size: 0.72rem;">
+            <svg id="audio-icon-unmuted" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <svg id="audio-icon-muted" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--critical)" stroke-width="2" style="display: none;"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <span id="audio-mute-label">Audio: ON</span>
+          </button>
+
+          <!-- Quick Aleana Voice Launcher Shortcut with Live Session State -->
+          <button class="btn-aleana-launcher" id="btn-quick-voice-drawer" title="Toggle Aleana Voice Assistant">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            <span>Aleana Voice</span>
+            <span class="badge mono badge-low" id="topbar-aleana-state" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 4px;">IDLE</span>
+          </button>
+
+          <!-- Simulated Provider Disclosure -->
+          <div class="env-status-pill mono">
+            <span class="dot-simulated" title="Simulated environment container"></span>
+            <span>PROVIDER: <strong>SIMULATED</strong></span>
+          </div>
+
+          <!-- Tenant Badge -->
+          <div class="env-status-pill mono">
+            <span>Tenant: <strong id="tenant-display">default</strong></span>
+          </div>
+
+          <!-- Theme Switcher (Dark / Light / System) -->
+          <div class="theme-switcher-group" id="theme-switcher-container" title="Switch visual theme">
+            <button class="theme-btn active" data-theme-choice="dark" id="theme-btn-dark" title="Dark Cyberpunk / Command Center">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button class="theme-btn" data-theme-choice="light" id="theme-btn-light" title="Light Enterprise / Day Mode">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+            <button class="theme-btn" data-theme-choice="system" id="theme-btn-system" title="System Match">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+            </button>
+          </div>
+
+          <!-- Admin / Cloud Operator Profile Badge -->
+          <div class="user-profile-badge" id="vanta-user-profile">
+            <div class="user-avatar-circle" id="user-avatar">OP</div>
+            <div class="user-meta-details">
+              <span class="user-name-line" id="user-display-name">local_operator</span>
+              <span class="user-role-line mono" id="user-role-label">Local Mode</span>
+            </div>
+            <button class="btn btn-sm btn-primary mono" id="btn-auth-action" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; margin-left: 0.4rem;">
+              Sign In
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Scrollable Content Viewports -->
+      <main class="main-content">
+
+        <!-- ========================================================= -->
+        <!-- VIEW 0: COMMAND CENTER (MAIN DASHBOARD)                   -->
+        <!-- ========================================================= -->
+        <section id="view-dashboard" class="view-section active">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Command Center</h1>
+              <div class="page-subtitle">Real-time security overview and system status</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span class="badge badge-low mono">5/5 SUBSYSTEMS NOMINAL</span>
+            </div>
+          </div>
+
+          <!-- Dashboard KPI Metrics Bar (Command Center Only) -->
+          <div class="stat-grid-4">
+            <div class="stat-widget widget-cyan" data-switch-view="events" title="Click to view Events & Telemetry" style="cursor: pointer;">
+              <div class="label">
+                <span>Total Detections</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="m9 8 3-3 3 3"/></svg>
+              </div>
+              <div class="val mono" id="stat-events">247</div>
+              <div class="trend trend-up-green mono">&rarr; View telemetry stream</div>
+            </div>
+
+            <div class="stat-widget widget-amber" data-switch-view="incidents" title="Click to view Incidents Queue" style="cursor: pointer;">
+              <div class="label">
+                <span>Open Incidents</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg>
+              </div>
+              <div class="val mono" id="stat-incidents" style="color: var(--accent-amber);">0</div>
+              <div class="trend trend-up-red mono">&rarr; Review priority alerts</div>
+            </div>
+
+            <div class="stat-widget widget-blue" data-switch-view="policies" title="Click to view Security Policies" style="cursor: pointer;">
+              <div class="label">
+                <span>Active Policies</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="21" y2="21"/><line x1="4" x2="20" y1="14" y2="14"/><line x1="4" x2="20" y1="7" y2="7"/><circle cx="8" cy="7" r="2"/><circle cx="16" cy="14" r="2"/><circle cx="12" cy="21" r="2"/></svg>
+              </div>
+              <div class="val mono" id="stat-policies">4</div>
+              <div class="trend trend-up-green mono">&rarr; Automated policy triggers</div>
+            </div>
+
+            <div class="stat-widget widget-emerald" data-switch-view="audit" title="Click to view Audit Trail" style="cursor: pointer;">
+              <div class="label">
+                <span>Audit Logs</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="val mono" id="stat-audit" style="color: var(--accent-emerald);">18</div>
+              <div class="trend trend-up-green mono">&rarr; Immutable compliance ledger</div>
+            </div>
+          </div>
+
+          <!-- Main Grid: Live Camera Feed + Recent Events (Matching Panel 1) -->
+          <div class="grid-2col" style="margin-bottom: 1.5rem;">
+
+            <!-- Live Camera Feed Preview -->
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <span>Live Camera Feed</span>
+                  <select class="vanta-select mono" id="dashboard-camera-picker" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+                    <option value="CAM-01-ENTRANCE">Main Entrance</option>
+                    <option value="CAM-02-LOBBY">Executive Lobby</option>
+                    <option value="CAM-03-BACKDOOR">Back Door</option>
+                    <option value="CAM-04-DOCK">Loading Dock</option>
+                  </select>
+                </div>
+                <div class="live-badge-red mono">
+                  <span class="live-dot"></span> LIVE
+                </div>
+              </div>
+
+              <!-- Interactive Simulated Feed Canvas -->
+              <div class="scanner-viewport" style="aspect-ratio: 16/9; max-height: 290px;">
+                <canvas id="dashboard-preview-canvas" width="640" height="360" style="width: 100%; height: 100%; object-fit: contain;"></canvas>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem;">
+                <span class="mono" style="font-size: 0.74rem; color: var(--text-dim);" id="dashboard-preview-stats">Active Stream: Main Entrance &bull; 1080p (Simulated) &bull; 15 FPS</span>
+                <button class="btn btn-sm btn-primary mono" data-switch-view="scanner">Open Full Scanner &rarr;</button>
+              </div>
+            </div>
+
+            <!-- Recent Events List (Matching Panel 1) -->
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title">Recent Events</div>
+                <button class="btn btn-sm mono" data-switch-view="events" style="border: none; color: var(--accent-cyan); background: transparent;">View All &rarr;</button>
+              </div>
+
+              <div class="recent-events-list" id="dashboard-recent-events">
+                <!-- Dynamically populated or seeded with realistic items -->
+                <div class="event-item-card">
+                  <div class="event-item-left">
+                    <div class="event-icon-circle sev-medium">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                      <div class="event-main-desc">Person Detected</div>
+                      <div class="event-sub-meta mono">Main Entrance</div>
+                    </div>
+                  </div>
+                  <div class="event-item-right">
+                    <span class="badge badge-high mono">Medium</span>
+                    <span class="event-rel-time mono">2m ago</span>
+                  </div>
+                </div>
+
+                <div class="event-item-card">
+                  <div class="event-item-left">
+                    <div class="event-icon-circle sev-high">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg>
+                    </div>
+                    <div>
+                      <div class="event-main-desc">Unauthorized Access</div>
+                      <div class="event-sub-meta mono">Back Door</div>
+                    </div>
+                  </div>
+                  <div class="event-item-right">
+                    <span class="badge badge-critical mono">High</span>
+                    <span class="event-rel-time mono">5m ago</span>
+                  </div>
+                </div>
+
+                <div class="event-item-card">
+                  <div class="event-item-left">
+                    <div class="event-icon-circle sev-medium">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>
+                    </div>
+                    <div>
+                      <div class="event-main-desc">Package Detected</div>
+                      <div class="event-sub-meta mono">Loading Dock</div>
+                    </div>
+                  </div>
+                  <div class="event-item-right">
+                    <span class="badge badge-high mono">Medium</span>
+                    <span class="event-rel-time mono">12m ago</span>
+                  </div>
+                </div>
+
+                <div class="event-item-card">
+                  <div class="event-item-left">
+                    <div class="event-icon-circle sev-low">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="m15 5 7 7-7 7"/></svg>
+                    </div>
+                    <div>
+                      <div class="event-main-desc">Motion Detected</div>
+                      <div class="event-sub-meta mono">Parking Lot</div>
+                    </div>
+                  </div>
+                  <div class="event-item-right">
+                    <span class="badge badge-low mono">Low</span>
+                    <span class="event-rel-time mono">1h ago</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Grid: Subsystem Telemetry & Quick Action Launchers -->
+          <div class="grid-2col">
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title">Core Subsystem Telemetry & Health</div>
+                <span class="badge badge-low mono">5/5 ONLINE</span>
+              </div>
+              <div class="diag-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 1rem; font-size: 0.78rem;">
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Vision Inference:</span><span class="mono" style="color: var(--accent-emerald);">Active (MobileNet V2)</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Voice Assistant:</span><span class="mono" style="color: var(--accent-cyan);">ALEANA Ready</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Vanta Brain CLI:</span><span class="mono" style="color: var(--accent-cyan);">7-Layer Guarded</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Policy Engine:</span><span class="mono" style="color: var(--text-main);">4 Automated Active</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Audit Ledger:</span><span class="mono" style="color: var(--accent-emerald);">SQLite Immutable</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Surveillance Feed:</span><span class="mono" style="color: var(--accent-amber);">SIMULATED</span></div>
+              </div>
+            </div>
+
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title">Operational Quick Actions</div>
+                <span class="badge badge-medium mono">AUTOMATE</span>
+              </div>
+              <div class="action-card-grid">
+                <button class="action-card-btn" data-switch-view="scanner">
+                  <span class="act-title">&bull; Live Scanner</span>
+                  <span class="act-desc">Real-time object detection & bounding box overlays</span>
+                </button>
+                <button class="action-card-btn" data-switch-view="aleana">
+                  <span class="act-title" style="color: #c084fc;">&bull; Aleana Voice</span>
+                  <span class="act-desc">Hands-free voice monitoring & spoken threat triage</span>
+                </button>
+                <button class="action-card-btn" data-switch-view="incidents">
+                  <span class="act-title">&bull; Incidents</span>
+                  <span class="act-desc">Triage and resolve active policy infractions</span>
+                </button>
+                <button class="action-card-btn" data-switch-view="audit">
+                  <span class="act-title">&bull; Audit Trail</span>
+                  <span class="act-desc">Immutable verification log & operator history</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 1: LIVE VISION SCANNER (Matching Panel 2)            -->
+        <!-- ========================================================= -->
+        <section id="view-scanner" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Live Vision Scanner</h1>
+              <div class="page-subtitle">AI-powered real-time object detection and threat analysis</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span class="badge badge-medium mono" id="model-status">Loading COCO-SSD...</span>
+            </div>
+          </div>
+
+          <div class="grid-60-40">
+            <!-- Left: Live Video Viewport -->
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <select class="vanta-select mono" id="scanner-camera-select" style="font-size: 0.78rem;">
+                    <option value="CAM-01-ENTRANCE">Main Entrance</option>
+                    <option value="CAM-02-LOBBY">Executive Lobby</option>
+                    <option value="WEBCAM">Browser Webcam</option>
+                    <option value="TEST_FEED">Simulated Feed</option>
+                  </select>
+                </div>
+                <div class="live-badge-red mono">
+                  <span class="live-dot"></span> LIVE
+                </div>
+              </div>
+
+              <div class="scanner-viewport" id="scanner-viewport-box">
+                <video id="video-element" playsinline webkit-playsinline muted autoplay></video>
+                <canvas id="canvas-element"></canvas>
+                <div class="scanner-overlay-badge mono" id="scanner-fps-badge">Inference: Idle</div>
+              </div>
+
+              <!-- Scanner Action Controls -->
+              <div class="scanner-controls" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; align-items: center;">
+                <button class="btn btn-primary" id="btn-start-cam">Start Webcam</button>
+                <button class="btn btn-danger" id="btn-stop-cam" disabled>Stop Feed</button>
+                <button class="btn" id="btn-test-feed" style="border-color: var(--accent-cyan); color: var(--accent-cyan);">Test Surveillance Feed</button>
+                <label class="btn" style="cursor: pointer;">
+                  Upload Video
+                  <input type="file" id="video-upload-input" accept="video/mp4,video/webm,video/ogg,video/quicktime" style="display: none;">
+                </label>
+                <button class="btn" id="btn-snapshot-detect">Single Frame Scan</button>
+                <button class="btn btn-sm mono" id="btn-toggle-heatmap" style="border-color: #f59e0b; color: #f59e0b;">Heatmap: OFF</button>
+                <button class="btn btn-sm mono" id="btn-capture-snapshot" style="border-color: var(--cyan); color: var(--cyan);">Capture Snapshot</button>
+                <button class="btn btn-sm" id="btn-retry-camera" style="display: none; border-color: var(--accent-amber); color: var(--accent-amber);">Retry Camera</button>
+                <button class="btn btn-sm btn-danger" id="btn-cancel-reconnect" style="display: none;">Cancel Reconnect</button>
+              </div>
+
+              <!-- Dynamic Object Type Filter HUD Bar (Zero-Inference Loop Overhead) -->
+              <div class="scanner-dynamic-filter-bar" id="scanner-dynamic-filters">
+                <div class="filter-bar-header">
+                  <div class="filter-bar-title-wrap">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    <span class="mono filter-bar-title">DYNAMIC TYPE FILTERS:</span>
+                    <span class="badge badge-cyan mono filter-hud-badge" id="filter-active-count-badge">5 Active</span>
+                  </div>
+                  <div class="filter-bar-actions">
+                    <button type="button" class="filter-action-btn mono" id="filter-preset-hightraffic" title="Optimize high-traffic throughput: Prioritizes Persons &amp; Vehicles, drops clutter">⚡ High-Traffic Mode</button>
+                    <button type="button" class="filter-action-btn mono" id="filter-preset-person-only" title="Solo Target: Persons Only">👤 Person Only</button>
+                    <button type="button" class="filter-action-btn mono" id="filter-preset-vehicle-only" title="Solo Target: Vehicles Only">🚗 Vehicle Only</button>
+                    <button type="button" class="filter-action-btn mono" id="filter-preset-all" title="Enable All Types">All Active</button>
+                  </div>
+                </div>
+                <div class="filter-pills-row" id="scanner-filter-pills">
+                  <button type="button" class="filter-pill active" data-filter-type="people" id="pill-filter-people" title="Toggle Person detection">
+                    <span class="pill-dot" style="background: #f43f5e;"></span>
+                    <span class="pill-icon">👤</span>
+                    <span class="pill-name">Persons</span>
+                    <span class="pill-status mono">ON</span>
+                  </button>
+                  <button type="button" class="filter-pill active" data-filter-type="vehicles" id="pill-filter-vehicles" title="Toggle Vehicles detection">
+                    <span class="pill-dot" style="background: #10b981;"></span>
+                    <span class="pill-icon">🚗</span>
+                    <span class="pill-name">Vehicles</span>
+                    <span class="pill-status mono">ON</span>
+                  </button>
+                  <button type="button" class="filter-pill active" data-filter-type="objects" id="pill-filter-objects" title="Toggle Luggage &amp; Bag detection">
+                    <span class="pill-dot" style="background: #a855f7;"></span>
+                    <span class="pill-icon">🎒</span>
+                    <span class="pill-name">Luggage</span>
+                    <span class="pill-status mono">ON</span>
+                  </button>
+                  <button type="button" class="filter-pill" data-filter-type="weapons" id="pill-filter-weapons" title="Toggle Hazards &amp; Weapons detection">
+                    <span class="pill-dot" style="background: #f59e0b;"></span>
+                    <span class="pill-icon">⚠️</span>
+                    <span class="pill-name">Hazards</span>
+                    <span class="pill-status mono">OFF</span>
+                  </button>
+                  <button type="button" class="filter-pill active" data-filter-type="electronics" id="pill-filter-electronics" title="Toggle Electronics detection">
+                    <span class="pill-dot" style="background: #06b6d4;"></span>
+                    <span class="pill-icon">📱</span>
+                    <span class="pill-name">Electronics</span>
+                    <span class="pill-status mono">ON</span>
+                  </button>
+                  <button type="button" class="filter-pill active" data-filter-type="animals" id="pill-filter-animals" title="Toggle Animals detection">
+                    <span class="pill-dot" style="background: #ec4899;"></span>
+                    <span class="pill-icon">🐾</span>
+                    <span class="pill-name">Animals</span>
+                    <span class="pill-status mono">ON</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Detections Pill Bar (Matching Panel 2 bottom) -->
+              <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: #fff;" id="detections-count-header">Detections (0)</div>
+                    <span id="detections-filter-badge" class="badge badge-medium mono" style="font-size: 0.68rem; padding: 0.15rem 0.45rem;">All Categories</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.45rem;">
+                    <label for="scanner-category-filter" style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em;" class="mono">Filter:</label>
+                    <select class="vanta-select mono" id="scanner-category-filter" style="font-size: 0.76rem; padding: 0.25rem 0.55rem; min-width: 165px; border-color: rgba(0, 229, 255, 0.4); background: #070d1e;">
+                      <option value="all">⚡ All Categories</option>
+                      <option value="person">👤 Persons Only</option>
+                      <option value="vehicles">🚗 Vehicles</option>
+                      <option value="luggage">🎒 Luggage &amp; Bags</option>
+                      <option value="weapons">⚠️ Hazards &amp; Weapons</option>
+                      <option value="electronics">📱 Electronics</option>
+                      <option value="animals">🐾 Animals</option>
+                      <option value="furniture">🪑 Interior &amp; Furniture</option>
+                      <option value="other">📦 Other Objects</option>
+                      <option value="none">🚫 Hide Detection Chips</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="detection-chips-container" id="detections-chips-row">
+                  <div class="det-chip chip-person mono" data-category="person">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Person</span>
+                    <span class="det-score">0.92</span>
+                  </div>
+                  <div class="det-chip chip-vehicle mono" data-category="vehicles">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="8" x="4" y="9" rx="2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>
+                    <span>Car</span>
+                    <span class="det-score">0.87</span>
+                  </div>
+                  <div class="det-chip chip-vehicle mono" data-category="vehicles">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+                    <span>Bicycle</span>
+                    <span class="det-score">0.76</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Forensic Evidence Gallery Strip -->
+              <div id="forensic-evidence-strip-container" style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <span class="mono" style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Forensic Evidence Gallery (In-Memory Buffer)</span>
+                  <span class="badge mono" id="evidence-count-badge" style="font-size: 0.65rem;">0 Snapshots</span>
+                </div>
+                <div id="forensic-evidence-strip" class="evidence-strip-grid">
+                  <div class="empty-state mono" style="padding: 0.75rem; font-size: 0.72rem; color: var(--text-dim); width: 100%; text-align: center;">
+                    No forensic captures stored. Click [Capture Snapshot] above to record watermarked surveillance evidence.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Camera & Scanner Diagnostics Panel -->
+              <div class="camera-diagnostics-panel" id="camera-diagnostics" style="margin-top: 1rem; background: #050812; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem;">
+                <div class="diag-header mono" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--accent-cyan); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.3rem;">
+                  <span>SCANNER &amp; CAMERA DIAGNOSTICS</span>
+                  <span id="diag-last-updated" style="color: var(--text-dim);">Live</span>
+                </div>
+                <div class="diag-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem 1rem; font-size: 0.75rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Permission:</span><span class="mono" id="diag-permission">Checking...</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Source:</span><span class="mono" id="diag-source">None</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">ReadyState:</span><span class="mono" id="diag-readystate">0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Video Dims:</span><span class="mono" id="diag-dimensions">0 x 0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Canvas Viewport:</span><span class="mono" id="diag-canvas-size">0 x 0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Scheduler:</span><span class="mono" id="diag-loop-state">Idle</span></div>
+                </div>
+                <div class="diag-error-box" id="diag-error-row" style="display: none; margin-top: 0.5rem; background: rgba(244, 63, 94, 0.1); border: 1px solid var(--accent-rose); padding: 0.35rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--accent-rose);">
+                  <span class="mono" style="font-weight: 700; margin-right: 0.35rem;">[ERROR]</span>
+                  <span id="diag-error-text" class="mono">No errors.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Radar Target & Detection Settings Panel (Matching Panel 2 right) -->
+            <div class="vanta-card">
+              <!-- Radar Widget -->
+              <div class="radar-scanner-box">
+                <div class="radar-ring-wrapper">
+                  <div class="radar-sweep"></div>
+                  <div class="radar-ring r1"></div>
+                  <div class="radar-ring r2"></div>
+                  <div class="radar-ring r3"></div>
+                  <div class="radar-center-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/></svg>
+                  </div>
+                </div>
+                <div class="radar-title">Scanning</div>
+                <div class="radar-specs mono">
+                  <span>AI Model: MobileNet V2</span>
+                  <span>FPS: <strong id="scanner-live-fps" style="color: var(--accent-cyan);">12.4</strong></span>
+                </div>
+              </div>
+
+              <!-- Detection Settings Toggles -->
+              <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.4rem;">
+                <div class="card-title" style="font-size: 0.85rem;">Detection Settings</div>
+              </div>
+
+              <div class="detection-settings-list">
+                <div class="setting-toggle-row">
+                  <span>People</span>
+                  <label class="switch"><input type="checkbox" id="toggle-det-people" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-row">
+                  <span>Vehicles</span>
+                  <label class="switch"><input type="checkbox" id="toggle-det-vehicles" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-row">
+                  <span>Objects</span>
+                  <label class="switch"><input type="checkbox" id="toggle-det-objects" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-row">
+                  <span>Weapons / Hazard</span>
+                  <label class="switch"><input type="checkbox" id="toggle-det-weapons"><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-row">
+                  <span>Electronics</span>
+                  <label class="switch"><input type="checkbox" id="toggle-det-electronics" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-row">
+                  <span>Animals</span>
+                  <label class="switch"><input type="checkbox" id="toggle-det-animals" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-row">
+                  <span>Custom Rules</span>
+                  <label class="switch"><input type="checkbox" id="toggle-det-custom"><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <!-- Confidence Threshold Slider -->
+              <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+                  <span>Confidence Threshold</span>
+                  <span id="conf-val" class="mono" style="color: var(--accent-cyan);">60%</span>
+                </div>
+                <input type="range" id="conf-slider" min="30" max="95" value="60" style="width: 100%;">
+              </div>
+
+              <!-- Live Detections Feed Stream -->
+              <div style="margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">Stream Telemetry</span>
+                  <button class="btn btn-sm mono" id="btn-clear-detections" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;">Clear</button>
+                </div>
+                <div id="detection-feed" style="max-height: 200px; overflow-y: auto;">
+                  <div class="empty-state" style="padding: 1.5rem 1rem; text-align: center; color: var(--text-dim); font-size: 0.78rem;">
+                    Awaiting camera feed or video stream...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 2: EVENTS & DETECTIONS (Matching Panel 3)            -->
+        <!-- ========================================================= -->
+        <section id="view-events" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Events & Incidents</h1>
+              <div class="page-subtitle">View and manage security events and incident reports</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <span class="mono" style="font-size: 0.78rem; color: var(--text-muted); background: var(--bg-surface-elevated); padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">Oct 18, 2026 - Oct 24, 2026</span>
+              <button class="btn btn-sm mono" id="btn-export-events-json" title="Export events as JSON dossier">Export JSON</button>
+              <button class="btn btn-sm mono" id="btn-export-events-csv" title="Export events as CSV spreadsheet">Export CSV</button>
+              <button class="btn btn-sm btn-primary mono" id="btn-refresh-events">Refresh Events</button>
+            </div>
+          </div>
+
+          <!-- Filter & Search Controls Bar -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <span class="filter-label">Severity:</span>
+              <select class="vanta-select" id="event-sev-filter">
+                <option value="all">All Severities</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <span class="filter-label">Status:</span>
+              <select class="vanta-select" id="event-status-filter">
+                <option value="all">All Status</option>
+                <option value="OPEN">Open</option>
+                <option value="INVESTIGATING">Investigating</option>
+                <option value="RESOLVED">Resolved</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <span class="filter-label">Source:</span>
+              <select class="vanta-select" id="event-camera-select">
+                <option value="all">All Sources</option>
+                <option value="Main Entrance">Main Entrance</option>
+                <option value="Executive Lobby">Executive Lobby</option>
+                <option value="Back Door">Back Door</option>
+                <option value="Loading Dock">Loading Dock</option>
+                <option value="BROWSER-WEBCAM">Browser Webcam</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <input type="text" class="search-input" id="event-search-input" placeholder="Search events...">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="vanta-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>Status</th>
+                  <th>Source</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="events-table-body">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-dim);" class="mono">Loading events...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar" id="events-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); font-size: 0.78rem; color: var(--text-muted);">
+            <div id="events-count-info" class="mono">Showing 0 of 0 events</div>
+            <div class="pagination-controls" style="display: flex; gap: 0.35rem; align-items: center;">
+              <button class="btn btn-sm" id="btn-events-prev" disabled>&larr;</button>
+              <span id="events-page-indicator" class="mono" style="padding: 0 0.5rem;">Page 1</span>
+              <button class="btn btn-sm" id="btn-events-next" disabled>&rarr;</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 3: INCIDENTS (WITH INSPECTION DRAWER)                -->
+        <!-- ========================================================= -->
+        <section id="view-incidents" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Security Incidents</h1>
+              <div class="page-subtitle">Policy breaches escalated for investigation and operator resolution</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-sm mono" id="btn-export-incidents-json" title="Export incidents as JSON dossier">Export JSON</button>
+              <button class="btn btn-sm mono" id="btn-export-incidents-csv" title="Export incidents as CSV spreadsheet">Export CSV</button>
+              <button class="btn btn-sm btn-primary mono" id="btn-refresh-incidents">Refresh Incidents</button>
+            </div>
+          </div>
+
+          <!-- Incidents Split View: Table (Left) + Inspection Drawer (Right) -->
+          <div class="incidents-split-container">
+            <!-- Left: Table and Filter Bar -->
+            <div>
+              <!-- Filter Bar -->
+              <div class="filter-bar">
+                <div class="filter-group">
+                  <span class="filter-label">Severity:</span>
+                  <div class="segmented-control" id="incident-severity-filter-group" style="display: flex; gap: 4px;">
+                    <button class="subtab-btn active" data-sev="all">All</button>
+                    <button class="subtab-btn" data-sev="CRITICAL">Critical</button>
+                    <button class="subtab-btn" data-sev="HIGH">High</button>
+                    <button class="subtab-btn" data-sev="MEDIUM">Medium</button>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <span class="filter-label">Status:</span>
+                  <div class="segmented-control" id="incident-status-filter-group" style="display: flex; gap: 4px;">
+                    <button class="subtab-btn active" data-status="all">All</button>
+                    <button class="subtab-btn" data-status="OPEN">Open</button>
+                    <button class="subtab-btn" data-status="RESOLVED">Resolved</button>
+                  </div>
+                  <input type="text" class="search-input" id="incident-search-input" placeholder="Search title or ID...">
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table class="vanta-table">
+                  <thead>
+                    <tr>
+                      <th>Incident ID</th>
+                      <th>Timestamp</th>
+                      <th>Severity</th>
+                      <th>Title</th>
+                      <th>Camera Zone</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="incidents-table-body">
+                    <tr><td colspan="7" style="text-align: center; color: var(--text-dim);" class="mono">Loading incidents...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Incident Inspection Drawer / Detail Panel -->
+            <div class="incident-inspect-card hud-card" id="incident-inspection-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.65rem; margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--cyan)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                  <span style="font-weight: 700; font-size: 0.88rem; color: #fff;">Incident Inspection</span>
+                </div>
+                <span class="badge mono badge-critical" id="inspect-status-badge">OPEN</span>
+              </div>
+
+              <!-- Reticle Preview Canvas -->
+              <div style="position: relative; background: #030712; border: 1px solid var(--border-cyan); border-radius: var(--radius-sm); height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 0.85rem;">
+                <div style="position: absolute; top: 6px; left: 8px; font-size: 0.65rem; color: var(--cyan);" class="mono">TARGET RETICLE HUD • 1080P PROJECTION</div>
+                <div style="width: 70px; height: 70px; border: 2px dashed var(--accent-rose); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(244, 63, 94, 0.1);">
+                  <span class="mono" style="font-size: 0.68rem; color: var(--accent-rose); font-weight: 700;" id="inspect-bbox-class">TARGET</span>
+                  <span class="mono" style="font-size: 0.62rem; color: #fff;" id="inspect-bbox-conf">96%</span>
+                </div>
+              </div>
+
+              <!-- Key Metadata Fields -->
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem; margin-bottom: 0.85rem;">
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Incident ID:</span><span class="mono" id="inspect-id" style="color: var(--cyan); font-weight: 600;">--</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Severity:</span><span id="inspect-severity" class="badge badge-critical mono">CRITICAL</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Breached Policy:</span><span class="mono" id="inspect-policy" style="color: var(--accent-amber);">pol_person_after_hours</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Camera Zone:</span><span class="mono" id="inspect-camera">CAM-01-ENTRANCE</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Timestamp:</span><span class="mono" id="inspect-timestamp" style="color: var(--text-muted);">--</span></div>
+              </div>
+
+              <!-- Metadata Payload JSON Block -->
+              <div style="margin-bottom: 0.85rem;">
+                <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; font-weight: 600;">Metadata Payload:</div>
+                <pre class="metadata-json-box" id="inspect-metadata-json">{"status": "Awaiting incident selection..."}</pre>
+              </div>
+
+              <!-- Action Resolution Button -->
+              <button class="btn btn-primary mono" id="btn-inspect-resolve" style="width: 100%; justify-content: center; padding: 0.55rem; font-weight: 600;">
+                Resolve Incident
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 4: SECURITY POLICIES (2x2 CYBER GRID + SUBTABS)      -->
+        <!-- ========================================================= -->
+        <section id="view-policies" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Security Policies</h1>
+              <div class="page-subtitle">Multi-tenant automated guardrails, access policies, and real-time triggers</div>
+            </div>
+            <button class="btn btn-primary mono" id="btn-open-add-policy">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+              <span>+ Add Policy</span>
+            </button>
+          </div>
+
+          <!-- 2x2 Cyber-Engineered Security Policies Grid -->
+          <div class="policy-2x2-grid">
+            <!-- Policy 1: Person After Hours -->
+            <div class="cyber-policy-card hud-card" id="card-policy-pol_person_after_hours">
+              <div>
+                <div class="policy-card-header">
+                  <div>
+                    <div class="policy-card-title">
+                      <span>After-Hours Intrusion</span>
+                      <span class="badge badge-critical mono">CRITICAL</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;" class="mono">ID: pol_person_after_hours</div>
+                  </div>
+                  <label class="switch" title="Toggle Policy Enforcement">
+                    <input type="checkbox" id="toggle-pol-person-after-hours" checked onchange="togglePolicy('pol_person_after_hours', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.4;">
+                  Flags any human target detected inside restricted facility zones between 20:00 and 06:00.
+                </div>
+                <div class="policy-cond-code">condition: hours &lt; 06:00 || hours &gt;= 20:00</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.65rem; font-size: 0.72rem;">
+                <span class="badge mono" style="background: rgba(22, 200, 244, 0.15); color: var(--cyan); border: 1px solid var(--border-cyan);">TARGET: PERSON</span>
+                <span class="mono" style="color: var(--accent-emerald);" id="status-pol-person-after-hours">ACTIVE • ENFORCED</span>
+              </div>
+            </div>
+
+            <!-- Policy 2: Unattended Bag -->
+            <div class="cyber-policy-card hud-card" id="card-policy-pol_unattended_bag">
+              <div>
+                <div class="policy-card-header">
+                  <div>
+                    <div class="policy-card-title">
+                      <span>Unattended Baggage Alert</span>
+                      <span class="badge badge-high mono">HIGH</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;" class="mono">ID: pol_unattended_bag</div>
+                  </div>
+                  <label class="switch" title="Toggle Policy Enforcement">
+                    <input type="checkbox" id="toggle-pol-unattended-bag" checked onchange="togglePolicy('pol_unattended_bag', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.4;">
+                  Escalates alert when backpacks, suitcases, or parcels remain stationary without human owner for &gt; 120s.
+                </div>
+                <div class="policy-cond-code">condition: stationary_seconds &gt; 120 &amp;&amp; owner_absent</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.65rem; font-size: 0.72rem;">
+                <span class="badge mono" style="background: rgba(246, 184, 74, 0.15); color: var(--accent-amber); border: 1px solid rgba(246, 184, 74, 0.3);">TARGET: LUGGAGE</span>
+                <span class="mono" style="color: var(--accent-emerald);" id="status-pol-unattended-bag">ACTIVE • ENFORCED</span>
+              </div>
+            </div>
+
+            <!-- Policy 3: Restricted Vehicle -->
+            <div class="cyber-policy-card hud-card" id="card-policy-pol_restricted_vehicle">
+              <div>
+                <div class="policy-card-header">
+                  <div>
+                    <div class="policy-card-title">
+                      <span>Restricted Vehicle Access</span>
+                      <span class="badge badge-medium mono">MEDIUM</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;" class="mono">ID: pol_restricted_vehicle</div>
+                  </div>
+                  <label class="switch" title="Toggle Policy Enforcement">
+                    <input type="checkbox" id="toggle-pol-restricted-vehicle" checked onchange="togglePolicy('pol_restricted_vehicle', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.4;">
+                  Monitors unauthorized automobiles, trucks, or motorcycles entering executive and security loading docks.
+                </div>
+                <div class="policy-cond-code">condition: zone in ['LOADING_DOCK', 'EXEC_LOBBY']</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.65rem; font-size: 0.72rem;">
+                <span class="badge mono" style="background: rgba(67, 139, 255, 0.15); color: var(--accent-blue); border: 1px solid rgba(67, 139, 255, 0.3);">TARGET: VEHICLE</span>
+                <span class="mono" style="color: var(--accent-emerald);" id="status-pol-restricted-vehicle">ACTIVE • ENFORCED</span>
+              </div>
+            </div>
+
+            <!-- Policy 4: Weapon Safety -->
+            <div class="cyber-policy-card hud-card" id="card-policy-pol_weapon_safety">
+              <div>
+                <div class="policy-card-header">
+                  <div>
+                    <div class="policy-card-title">
+                      <span>Hazard / Weapon Safety</span>
+                      <span class="badge badge-critical mono">CRITICAL</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;" class="mono">ID: pol_weapon_safety</div>
+                  </div>
+                  <label class="switch" title="Toggle Policy Enforcement">
+                    <input type="checkbox" id="toggle-pol-weapon-safety" checked onchange="togglePolicy('pol_weapon_safety', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.4;">
+                  Immediate lockdown notification when bladed weapons, firearms, or hazardous tools exceed 60% confidence.
+                </div>
+                <div class="policy-cond-code">condition: target_class in ['knife', 'scissors'] &amp;&amp; conf &gt;= 0.60</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.65rem; font-size: 0.72rem;">
+                <span class="badge mono" style="background: rgba(255, 93, 108, 0.15); color: var(--critical); border: 1px solid rgba(255, 93, 108, 0.3);">TARGET: HAZARD</span>
+                <span class="mono" style="color: var(--accent-emerald);" id="status-pol-weapon-safety">ACTIVE • ENFORCED</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Policy Category Tabs (Matching Panel 4) -->
+          <div class="subtab-strip">
+            <button class="subtab-btn active" data-policy-category="all">Access Control</button>
+            <button class="subtab-btn" data-policy-category="detection">Detection Rules</button>
+            <button class="subtab-btn" data-policy-category="system">System Policies</button>
+            <button class="subtab-btn" data-policy-category="automation">Automation</button>
+          </div>
+
+          <div class="table-container">
+            <table class="vanta-table">
+              <thead>
+                <tr>
+                  <th>Policy Name</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="policies-table-body">
+                <tr><td colspan="4" style="text-align: center; color: var(--text-dim);" class="mono">Loading policies...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 5: AI COPILOT (Matching Panel 5)                     -->
+        <!-- ========================================================= -->
+        <section id="view-copilot" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">AI Copilot</h1>
+              <div class="page-subtitle">Your intelligent context-aware security assistant</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <span class="badge badge-low mono" id="copilot-grounding-badge">GROUNDED IN SQLITE TELEMETRY</span>
+              <button class="btn btn-sm mono" id="btn-copilot-speech-toggle" title="Toggle automatic speech playback for Copilot responses">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <span id="copilot-speech-status">Voice: OFF</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Context Telemetry Bar -->
+          <div class="filter-bar" style="margin-bottom: 1rem; padding: 0.5rem 0.85rem; font-size: 0.75rem;">
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+              <span style="color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Live Telemetry Sources:</span>
+              <span class="mono" id="copilot-scanner-ctx" style="color: var(--text-muted);">Scanner: <strong>CHECKING...</strong></span>
+              <span class="mono" id="copilot-incidents-ctx" style="color: var(--accent-amber);">Incidents: <strong>CHECKING...</strong></span>
+              <span class="mono" id="copilot-policies-ctx" style="color: var(--accent-cyan);">Policies: <strong>CHECKING...</strong></span>
+            </div>
+            <span class="mono" style="font-size: 0.7rem; color: var(--text-dim);">Zero cloud frame streaming</span>
+          </div>
+
+          <div class="grid-60-40" style="grid-template-columns: 290px 1fr;">
+            <!-- Left: Quick Commands (Matching Panel 5) -->
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title" style="font-size: 0.85rem;">Operational Quick Prompts</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn copilot-chip" data-q="How many objects are visible right now?" style="justify-content: flex-start; text-align: left; border-color: rgba(0, 229, 255, 0.4);">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-cyan);"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                  <span style="color: var(--accent-cyan); font-weight: 600;">How many objects visible?</span>
+                </button>
+                <button class="btn copilot-chip" data-q="How many people and vehicles are detected?" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>People &amp; vehicles census</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Show the current track IDs" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+                  <span>Show active track IDs</span>
+                </button>
+                <button class="btn copilot-chip" data-q="What changed in the last few seconds?" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  <span>What changed recently?</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Is the scanner running?" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                  <span>Check scanner status</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Summarize recent detections" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  <span>Summarize detections</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Show the latest high-severity incidents" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg>
+                  <span>High-severity incidents</span>
+                </button>
+                <button class="btn copilot-chip" data-q="What is happening in the selected camera feed?" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+                  <span>Camera feed activity</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Explain this detection" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+                  <span>Explain detection model</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Help me understand why an alert was generated" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  <span>Why alert was generated</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Find recent events involving cars" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <span>Find events involving cars</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Check system health and core telemetry" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                  <span>Check system health</span>
+                </button>
+                <button class="btn copilot-chip" data-q="Generate comprehensive security report" style="justify-content: flex-start; text-align: left;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span>Generate report</span>
+                </button>
+              </div>
+
+              <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);">
+                <button class="btn btn-sm mono" id="btn-clear-copilot" style="width: 100%; justify-content: center; color: var(--text-dim);">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                  <span>Clear Chat</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right: Interactive Chat Thread (Matching Panel 5) -->
+            <div class="vanta-card" style="display: flex; flex-direction: column;">
+              <div class="copilot-thread" id="copilot-thread-box" style="flex: 1; min-height: 380px;">
+                <div class="copilot-msg copilot-user">
+                  <div class="copilot-msg-header mono">Operator &bull; 04:29 PM</div>
+                  <div>What happened in the last 1 hour?</div>
+                </div>
+
+                <div class="copilot-msg copilot-bot">
+                  <div class="copilot-msg-header mono">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>VantaVisionAI Copilot &bull; Verified Telemetry</span>
+                  </div>
+                  <div class="copilot-msg-body">
+                    <strong>Here's the summary of security events from the last 1 hour:</strong>
+                    <ul class="copilot-list" style="margin-top: 0.5rem;">
+                      <li>&bull; 3 person detections (1 high priority)</li>
+                      <li>&bull; 1 unauthorized access attempt</li>
+                      <li>&bull; 1 package detection (resolved)</li>
+                      <li>&bull; System health is normal (98%)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Input bar with text input, voice mic button, and send button -->
+              <form id="copilot-form" class="input-group" style="margin-top: 1rem;">
+                <input type="text" id="copilot-input" class="vanta-input" placeholder="Ask Copilot about live tracks, incidents, alerts, or system health..." autocomplete="off">
+                <button type="button" class="btn" id="btn-copilot-voice-mic" title="Voice Input (Click to speak)">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                </button>
+                <button type="submit" class="btn btn-primary" id="btn-send-copilot" title="Send message">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 6: ALEANA VOICE ASSISTANT (NEW MASTER COMPONENT)     -->
+        <!-- ========================================================= -->
+        <section id="view-aleana" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>Aleana Voice Assistant</span>
+                <span class="badge mono" style="background: rgba(168, 85, 247, 0.2); border: 1px solid #c084fc; color: #e9d5ff;">VOICE-AI</span>
+              </h1>
+              <div class="page-subtitle">Hands-free voice monitoring, real-time threat investigation, and operational camera control</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span class="badge badge-low mono" id="aleana-state-badge">IDLE &bull; READY</span>
+            </div>
+          </div>
+
+          <div class="aleana-showcase-container">
+            <!-- Left: Pulsing Voice Orb & Microphone Controls -->
+            <div class="aleana-orb-stage" id="aleana-orb-container">
+              <div class="voice-orb-wrapper">
+                <div class="voice-orb-glow-ring r-outer"></div>
+                <div class="voice-orb-glow-ring"></div>
+                <div class="voice-orb-core" id="btn-aleana-orb" title="Click to start voice recognition">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Audio Waveform Visualizer -->
+              <div class="audio-waveform-bars" id="aleana-waveform-box">
+                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                <div class="wave-bar"></div><div class="wave-bar"></div>
+              </div>
+
+              <div class="aleana-status-caption" id="aleana-status-label">Click microphone to speak</div>
+              <div class="aleana-transcription-preview mono" id="aleana-live-transcript">
+                "Aleana, how many open incidents do we have?"
+              </div>
+
+              <!-- Voice Input Controls -->
+              <div style="display: flex; gap: 0.5rem; margin-top: 1.25rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="btn-aleana-mic-toggle">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                  <span id="aleana-mic-btn-text">Start Listening</span>
+                </button>
+                <button class="btn" id="btn-aleana-pause-toggle" title="Pause / Resume persistent listening">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  <span id="aleana-pause-btn-text">Pause</span>
+                </button>
+                <button class="btn btn-danger" id="btn-aleana-stop-assistant" title="Full voice session shutdown">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                  <span>Stop Aleana</span>
+                </button>
+                <button class="btn" id="btn-aleana-stop-speech" title="Stop assistant speech playback">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="2"/></svg>
+                  <span>Stop Speech</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right: Spoken Response Card, Voice Settings, Command Chips -->
+            <div class="aleana-reply-box">
+              <div>
+                <div class="aleana-reply-header">
+                  <div style="font-weight: 600; font-size: 0.88rem; color: #fff; display: flex; align-items: center; gap: 0.45rem;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#c084fc" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                    <span>Aleana's Spoken Response</span>
+                  </div>
+                  <span class="badge badge-low mono" id="aleana-voice-availability">Web Speech Synthesis Active</span>
+                </div>
+
+                <div class="aleana-speech-content" id="aleana-response-text">
+                  "Hello operator. I am Aleana, your VantaVisionAI voice assistant. All 4 camera feeds and automated policies are running. Say 'How many open incidents are there?' or 'Open Live Scanner' to begin."
+                </div>
+
+                <!-- Suggested Voice Commands -->
+                <div style="margin-top: 1.25rem;">
+                  <div style="font-size: 0.74rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.45rem; font-weight: 600;">
+                    Suggested Voice Triggers:
+                  </div>
+                  <div class="quick-commands">
+                    <button class="chip-btn aleana-trigger-chip" data-voice="Aleana, open Command Center">"Open Command Center"</button>
+                    <button class="chip-btn aleana-trigger-chip" data-voice="Aleana, start scanner">"Start scanner"</button>
+                    <button class="chip-btn aleana-trigger-chip" data-voice="How many open incidents do we have?">"How many open incidents?"</button>
+                    <button class="chip-btn aleana-trigger-chip" data-voice="Summarize recent threats">"Summarize recent threats"</button>
+                    <button class="chip-btn aleana-trigger-chip" data-voice="Check system health">"Check system health"</button>
+                    <button class="chip-btn aleana-trigger-chip" data-voice="Run intrusion simulation">"Run intrusion simulation"</button>
+                    <button class="chip-btn aleana-trigger-chip" data-voice="Stop scanning">"Stop scanning"</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Speech Configuration Options -->
+              <div class="aleana-speech-controls">
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                  <div>
+                    <span style="font-size: 0.7rem; color: var(--text-dim); display: block;">Voice Engine</span>
+                    <select class="vanta-select mono" id="aleana-voice-select" style="font-size: 0.74rem; min-width: 140px;"></select>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.7rem; color: var(--text-dim); display: block;">Speech Rate</span>
+                    <select class="vanta-select mono" id="aleana-rate-select" style="font-size: 0.74rem;">
+                      <option value="0.9">0.9x Calm</option>
+                      <option value="1.0" selected>1.0x Normal</option>
+                      <option value="1.15">1.15x Fast</option>
+                    </select>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.7rem; color: var(--text-dim); display: block;">Language</span>
+                    <select class="vanta-select mono" id="aleana-lang-select" style="font-size: 0.74rem;">
+                      <option value="en-US">English (US)</option>
+                      <option value="en-IN">English (India)</option>
+                      <option value="hi-IN">Hindi / Hinglish</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Text Fallback Input -->
+                <form id="aleana-text-form" class="input-group" style="width: 100%; margin-top: 0.75rem;">
+                  <input type="text" id="aleana-text-input" class="vanta-input" placeholder="Type a command for Aleana (e.g., 'show incidents', 'start camera')...">
+                  <button type="submit" class="btn btn-primary mono">Send</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 7: VANTA BRAIN (CONTROLLED CLI & 7-LAYER ENGINE)     -->
+        <!-- ========================================================= -->
+        <section id="view-brain" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Vanta Brain (Controlled CLI)</h1>
+              <div class="page-subtitle">7-Layer Architecture: Intent Router &bull; Context &bull; Evidence &bull; Reasoning &bull; Action Guard &bull; Audit &bull; Fallback</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span class="badge badge-low mono">7-LAYER ACTION GUARD ACTIVE</span>
+            </div>
+          </div>
+
+          <!-- 70/30 Split: Terminal (Left 70%) vs High-Security Status Card (Right 30%) -->
+          <div class="brain-70-30-grid">
+            <!-- Left 70%: Terminal & Command Dispatcher -->
+            <div class="vanta-card hud-card" style="display: flex; flex-direction: column; gap: 0.85rem;">
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; font-weight: 600;">
+                  Allowlisted Operational Commands:
+                </div>
+                <div class="quick-commands">
+                  <button class="cmd-btn cmd-pill" data-cmd="help">help</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="status">status</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="capabilities">capabilities</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="summary">summary</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="tools" style="border-color: var(--cyan); color: var(--cyan);">tools (Registry)</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="incidents">incidents</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="policies">policies</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="cameras">cameras</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="events">events</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="diagnostics">diagnostics</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="audit">audit</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="troubleshoot">troubleshoot</button>
+                  <button class="cmd-btn cmd-pill" id="btn-test-sqli" data-cmd="events" data-args='{"filter": "1; DROP TABLE events;--"}' style="border-color: var(--critical); color: var(--critical); font-weight: 600;">Test Action Guard (SQLi Block)</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="unauthorized_test" style="border-color: var(--critical); color: var(--critical);">[Test Disallowed Intent]</button>
+                </div>
+              </div>
+
+              <!-- 7-Layer Visualizer Telemetry Bar -->
+              <div class="pipeline-visualizer-bar" id="brain-pipeline-visualizer">
+                <div class="pipeline-step-node" id="node-layer-1" data-layer="1">
+                  <span class="node-dot"></span>
+                  <span>L1: Intent Router</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-2" data-layer="2">
+                  <span class="node-dot"></span>
+                  <span>L2: Tenant Context</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-3" data-layer="3">
+                  <span class="node-dot"></span>
+                  <span>L3: Evidence Query</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-4" data-layer="4">
+                  <span class="node-dot"></span>
+                  <span>L4: Reasoning</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-5" data-layer="5">
+                  <span class="node-dot"></span>
+                  <span>L5: Action Guard</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-6" data-layer="6">
+                  <span class="node-dot"></span>
+                  <span>L6: Execution</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-7" data-layer="7">
+                  <span class="node-dot"></span>
+                  <span>L7: Contract</span>
+                </div>
+              </div>
+
+              <!-- Obsidian High-Contrast Terminal -->
+              <div class="obsidian-terminal mono" id="brain-terminal-output">
+VantaVisionAI Controlled Brain Command Console v2.0.0
+Security Guard: Tenant Isolation Active | Audit Logging Enabled | Direct Shell: Blocked
+Type 'help' or click an allowlisted command above to inspect prototype state.
+              </div>
+
+              <!-- Interactive Prompt Input -->
+              <form id="brain-form" class="brain-cli-prompt">
+                <span class="brain-prompt-prefix">vanta-brain&gt;</span>
+                <input type="text" id="brain-cmd-input" class="vanta-input mono" placeholder="Enter allowlisted command (e.g. status, summary, incidents, tools)..." autocomplete="off" style="flex: 1; border: none; background: transparent; padding-left: 0.25rem;">
+                <button type="submit" class="btn btn-primary mono" id="btn-exec-brain" style="padding: 0.35rem 0.85rem; font-size: 0.76rem;">Execute</button>
+              </form>
+
+              <!-- 3 One-Click Autonomous Security Playbooks -->
+              <div style="margin-top: 0.35rem;">
+                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.45rem; font-weight: 600;">
+                  Autonomous Threat Playbooks (One-Click Multi-Tool Orchestration):
+                </div>
+                <div class="playbooks-grid" id="playbook-cards-grid">
+                  <div class="playbook-card">
+                    <div>
+                      <div class="playbook-card-title">
+                        <span style="color: var(--cyan);">&bull; Playbook 01</span>
+                        <span>Perimeter Lockdown Audit</span>
+                      </div>
+                      <div class="playbook-card-desc">Validates policies, verifies camera streams, and checks restricted zones.</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary mono" id="btn-run-playbook-1" style="font-size: 0.72rem; padding: 0.35rem 0.6rem;">Execute Playbook 01</button>
+                  </div>
+                  <div class="playbook-card">
+                    <div>
+                      <div class="playbook-card-title">
+                        <span style="color: var(--accent-amber);">&bull; Playbook 02</span>
+                        <span>Incident Triage &amp; Mitigate</span>
+                      </div>
+                      <div class="playbook-card-desc">Queries open incidents, correlates threats, dispatches actions, and logs ledger.</div>
+                    </div>
+                    <button class="btn btn-sm mono" id="btn-run-playbook-2" style="border-color: var(--accent-amber); color: var(--accent-amber); font-size: 0.72rem; padding: 0.35rem 0.6rem;">Execute Playbook 02</button>
+                  </div>
+                  <div class="playbook-card">
+                    <div>
+                      <div class="playbook-card-title">
+                        <span style="color: var(--success);">&bull; Playbook 03</span>
+                        <span>Zero-Trust Self-Test</span>
+                      </div>
+                      <div class="playbook-card-desc">Simulates SQLi attack on Layer 5 Action Guard and verifies isolation.</div>
+                    </div>
+                    <button class="btn btn-sm mono" id="btn-run-playbook-3" style="border-color: var(--success); color: var(--success); font-size: 0.72rem; padding: 0.35rem 0.6rem;">Execute Playbook 03</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right 30%: High-Security Status Card -->
+            <div class="brain-security-card hud-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.65rem; margin-bottom: 0.85rem;">
+                <div style="font-weight: 700; font-size: 0.88rem; color: #fff; display: flex; align-items: center; gap: 0.45rem;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--cyan)" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+                  <span>High-Security Status</span>
+                </div>
+                <span class="badge badge-low mono">ACTIVE</span>
+              </div>
+
+              <div class="security-check-row">
+                <span style="color: var(--text-dim);">Action Guard (Layer 5):</span>
+                <span class="badge badge-low mono">ENFORCING</span>
+              </div>
+              <div class="security-check-row">
+                <span style="color: var(--text-dim);">Provider Mode:</span>
+                <span class="mono" style="color: var(--cyan); font-weight: 600;">DETERMINISTIC_GROUNDED</span>
+              </div>
+              <div class="security-check-row">
+                <span style="color: var(--text-dim);">Approved Registry:</span>
+                <span class="mono" style="color: #fff; font-weight: 600;">12 Allowlisted Tools</span>
+              </div>
+              <div class="security-check-row">
+                <span style="color: var(--text-dim);">Tenant Isolation:</span>
+                <span class="mono" style="color: var(--accent-emerald); font-weight: 600;">STRICT X-Tenant-ID</span>
+              </div>
+              <div class="security-check-row">
+                <span style="color: var(--text-dim);">Injection Firewall:</span>
+                <span class="mono" style="color: var(--accent-emerald);">SQLi &amp; Shell Blocked</span>
+              </div>
+              <div class="security-check-row">
+                <span style="color: var(--text-dim);">Core Backend:</span>
+                <span class="mono" style="color: #fff;">FastAPI + SQLite WAL</span>
+              </div>
+              <div class="security-check-row">
+                <span style="color: var(--text-dim);">Evidence Layer:</span>
+                <span class="mono" style="color: var(--accent-amber);">Structured Context</span>
+              </div>
+
+              <div style="margin-top: 1rem; padding: 0.75rem; background: #040811; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.72rem; color: var(--text-muted); line-height: 1.45;">
+                <span class="mono" style="color: var(--cyan); font-weight: 700;">[POLICY]</span> All CLI operations pass through Layer 1 intent validation. SQL injection, arbitrary process spawning, and unauthenticated commands are rejected and recorded to audit logs.
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Mini Immutable Audit Trail Table -->
+          <div class="vanta-card hud-card" style="margin-top: 1.25rem;">
+            <div class="card-header" style="margin-bottom: 0.65rem;">
+              <div class="card-title" style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--cyan)" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Recent Guarded Execution Ledger (Immutable Audit Log)</span>
+              </div>
+              <button class="btn btn-sm mono" id="btn-refresh-brain-audit" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">Refresh Ledger</button>
+            </div>
+            <div class="table-container">
+              <table class="vanta-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Actor</th>
+                    <th>Command / Action</th>
+                    <th>Status</th>
+                    <th>Execution Time</th>
+                  </tr>
+                </thead>
+                <tbody id="brain-mini-audit-tbody">
+                  <tr><td colspan="5" style="text-align: center; color: var(--text-dim);" class="mono">Loading execution ledger...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 8: AUDIT TRAIL & SYSTEM (Matching Panel 6)           -->
+        <!-- ========================================================= -->
+        <section id="view-audit" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Audit Trail & System</h1>
+              <div class="page-subtitle">Logs, system diagnostics and infrastructure status</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-sm mono" id="btn-verify-audit-chain" style="border-color: var(--cyan); color: var(--cyan); font-weight: 600;">Verify Ledger Integrity</button>
+              <button class="btn btn-sm mono" id="btn-export-dossier" style="border-color: var(--accent-emerald); color: var(--accent-emerald); font-weight: 600;" title="Export Cryptographic Forensic Dossier JSON">Export Forensic Dossier</button>
+              <button class="btn btn-sm mono" id="btn-export-audit-json" title="Export audit trail as JSON dossier">Export JSON</button>
+              <button class="btn btn-sm mono" id="btn-export-audit-csv" title="Export audit trail as CSV spreadsheet">Export CSV</button>
+              <button class="btn btn-sm btn-primary mono" id="btn-refresh-audit">Refresh Audit</button>
+            </div>
+          </div>
+
+          <!-- Ledger Cryptographic Verification Status Banner -->
+          <div id="audit-chain-status-banner">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="pulse-dot" style="background: var(--cyan);" id="audit-chain-dot"></span>
+              <span>LEDGER INTEGRITY: <strong id="audit-chain-status-text">UNVERIFIED (Click "Verify Ledger Integrity")</strong></span>
+            </div>
+            <div class="mono" style="font-size: 0.68rem; color: var(--text-dim);" id="audit-chain-hash-preview">GENESIS: GENESIS_BLOCK_0000</div>
+          </div>
+
+          <!-- Subtabs (Matching Panel 6) -->
+          <div class="subtab-strip">
+            <button class="subtab-btn active" data-audit-tab="logs">Audit Logs</button>
+            <button class="subtab-btn" data-audit-tab="health">System Health</button>
+            <button class="subtab-btn" data-audit-tab="db">Database</button>
+            <button class="subtab-btn" data-audit-tab="api">API Status</button>
+          </div>
+
+          <!-- Audit Filters -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <span class="filter-label">Filter Action:</span>
+              <select class="vanta-select" id="audit-action-select">
+                <option value="all">All Actions</option>
+                <option value="EVENT_RECORDED">EVENT_RECORDED</option>
+                <option value="EVENT_DELETED">EVENT_DELETED</option>
+                <option value="INCIDENT_RESOLVED">INCIDENT_RESOLVED</option>
+                <option value="POLICY_ENABLED">POLICY_ENABLED</option>
+                <option value="POLICY_DISABLED">POLICY_DISABLED</option>
+                <option value="BRAIN_COMMAND">BRAIN_COMMAND</option>
+                <option value="ALEANA_VOICE_COMMAND">ALEANA_VOICE_COMMAND</option>
+              </select>
+            </div>
+            <input type="text" class="search-input" id="audit-search-input" placeholder="Search actor or details...">
+          </div>
+
+          <div class="table-container">
+            <table class="vanta-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Resource</th>
+                  <th>Status &amp; Hash Chain</th>
+                  <th>IP Address</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-dim);" class="mono">Loading audit logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bottom 4 Telemetry Cards (Matching Panel 6 bottom) -->
+          <div class="telemetry-grid-4" style="margin-top: 1.5rem; margin-bottom: 0;">
+            <div class="stat-widget widget-emerald" style="padding: 0.85rem 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent-emerald)" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+                <div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted);">API Server</div>
+                  <div class="mono" style="font-size: 0.95rem; font-weight: 700; color: var(--accent-emerald);">Healthy</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-widget widget-emerald" style="padding: 0.85rem 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent-emerald)" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+                <div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted);">Database</div>
+                  <div class="mono" style="font-size: 0.95rem; font-weight: 700; color: var(--accent-emerald);">Healthy (SQLite)</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-widget widget-cyan" style="padding: 0.85rem 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent-cyan)" stroke-width="2"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+                <div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted);">Camera Feeds</div>
+                  <div class="mono" style="font-size: 0.95rem; font-weight: 700; color: var(--accent-cyan);">4/4 Online</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-widget widget-emerald" style="padding: 0.85rem 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent-emerald)" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/></svg>
+                <div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted);">Storage</div>
+                  <div class="mono" style="font-size: 0.95rem; font-weight: 700; color: var(--accent-emerald);">Healthy</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 9: SYSTEM DIAGNOSTICS & PIPELINE                     -->
+        <!-- ========================================================= -->
+        <section id="view-system" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">System Diagnostics & Pipeline</h1>
+              <div class="page-subtitle">Subsystem readiness, hardware disclosure, and automated simulation runner</div>
+            </div>
+            <button class="btn btn-sm btn-primary mono" id="btn-refresh-system">Refresh Diagnostics</button>
+          </div>
+
+          <div class="grid-2col">
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title">System Pipeline Status</div>
+              </div>
+              <div class="brain-terminal" id="pipeline-status-output" style="min-height: 280px;">
+Loading system pipeline details...
+              </div>
+            </div>
+
+            <div class="vanta-card">
+              <div class="card-header">
+                <div class="card-title">One-Click Threat Simulation (POST /api/v1/demo/run)</div>
+                <span class="badge badge-high mono">LIVE TEST</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+                Simulates an end-to-end after-hours perimeter breach. Injects high-confidence person and luggage detections into SQLite, evaluates active policies, auto-escalates an incident, and writes to the audit ledger.
+              </p>
+              <button class="btn btn-primary" id="btn-run-demo" style="width: 100%; justify-content: center; padding: 0.85rem;">
+                Run End-to-End Simulation
+              </button>
+              <div class="brain-terminal" id="demo-output" style="margin-top: 1rem; min-height: 160px;">
+Simulation runner ready. Click above to test complete detection-to-incident lifecycle.
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Floating Aleana Quick Voice Assistant Drawer -->
+  <div class="aleana-floating-drawer" id="aleana-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#c084fc" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        <span>ALEANA Voice Assistant</span>
+      </div>
+      <button class="btn btn-sm" id="btn-close-aleana-drawer" style="border: none; background: transparent; color: var(--text-muted);">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-mini-orb" id="drawer-orb-btn" title="Click to speak">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+      </div>
+      <div style="font-size: 0.82rem; font-weight: 600; color: #fff;" id="drawer-aleana-status">Click to speak</div>
+      <div class="mono" style="font-size: 0.74rem; color: #93c5fd; text-align: center; margin-top: 0.35rem; min-height: 34px;" id="drawer-transcript-preview">
+        "Say: Aleana, check system health"
+      </div>
+      <div style="width: 100%; margin-top: 0.75rem; display: flex; gap: 0.4rem;">
+        <button class="btn btn-sm btn-primary mono" data-switch-view="aleana" style="flex: 1; justify-content: center;">Full &rarr;</button>
+        <button class="btn btn-sm mono" id="drawer-pause-btn" style="border-color: var(--border-subtle); color: var(--text-muted);" title="Pause voice listening">Pause</button>
+        <button class="btn btn-sm btn-danger mono" id="drawer-stop-voice-btn" title="Stop Aleana session">Stop</button>
+      </div>
+
+      <!-- Drawer Text Fallback Input -->
+      <form id="drawer-aleana-form" class="input-group" style="width: 100%; margin-top: 0.65rem;">
+        <input type="text" id="drawer-aleana-input" class="vanta-input mono" placeholder="Type command for Aleana..." style="font-size: 0.76rem; padding: 0.35rem 0.55rem;" autocomplete="off">
+        <button type="submit" class="btn btn-primary mono" style="font-size: 0.74rem; padding: 0.35rem 0.65rem;">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Custom Security Policy -->
+  <div class="vanta-modal-backdrop" id="modal-add-policy" role="dialog" aria-modal="true">
+    <div class="vanta-modal-content">
+      <div class="modal-header">
+        <div class="modal-title">+ Add Security Policy</div>
+        <button class="btn btn-sm" id="btn-close-add-policy-modal">&times;</button>
+      </div>
+      <form id="form-add-policy">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Policy Name</label>
+          <input type="text" class="vanta-input" id="policy-name-input" placeholder="e.g. Loading Dock Linger Alert" required>
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Target Object Class</label>
+          <select class="vanta-select" id="policy-class-select" style="width: 100%;">
+            <option value="person">person (Human presence)</option>
+            <option value="car">car (Vehicular traffic)</option>
+            <option value="truck">truck (Heavy transport)</option>
+            <option value="backpack">backpack (Unattended baggage)</option>
+            <option value="suitcase">suitcase (Luggage)</option>
+            <option value="cell phone">cell phone (Restricted device)</option>
+            <option value="scissors">scissors (Hazard / Sharp item)</option>
+          </select>
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Trigger Condition</label>
+          <input type="text" class="vanta-input mono" id="policy-cond-input" value="confidence > 0.75" required>
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Severity Level</label>
+          <select class="vanta-select" id="policy-sev-select" style="width: 100%;">
+            <option value="LOW">LOW</option>
+            <option value="MEDIUM" selected>MEDIUM</option>
+            <option value="HIGH">HIGH</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Description / Enforcement Scope</label>
+          <textarea class="vanta-input" id="policy-desc-input" rows="2" placeholder="Explain rule purpose and incident escalation instructions..."></textarea>
+        </div>
+        <div class="modal-actions" style="margin-top: 1rem;">
+          <button type="button" class="btn" id="btn-cancel-add-policy">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Policy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Event Details -->
+  <div class="vanta-modal-backdrop" id="modal-event-detail" role="dialog" aria-modal="true">
+    <div class="vanta-modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="event-detail-title">Detection Event Detail</div>
+        <button class="btn btn-sm" id="btn-close-event-modal">&times;</button>
+      </div>
+      <div class="modal-body" id="event-detail-body">
+        <!-- Filled dynamically -->
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="btn-dismiss-event-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accessible Confirmation Modal -->
+  <div class="vanta-modal-backdrop" id="vanta-modal" role="dialog" aria-modal="true">
+    <div class="vanta-modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="vanta-modal-title">Confirm Action</div>
+        <button class="btn btn-sm" id="vanta-modal-close" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" id="vanta-modal-body">
+        Are you sure you want to proceed?
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="vanta-modal-cancel">Cancel</button>
+        <button class="btn btn-danger" id="vanta-modal-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Command Palette Modal (Ctrl+K / ⌘K) -->
+  <div class="cmd-palette-modal" id="command-palette-modal" role="dialog" aria-modal="true" aria-label="Command Palette">
+    <div class="cmd-palette-backdrop" id="cmd-palette-backdrop"></div>
+    <div class="cmd-palette-dialog hud-card">
+      <div class="cmd-palette-header">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--cyan)" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="cmd-palette-input" id="cmd-palette-search" placeholder="Type a command, route, or action (e.g. scanner, audit, demo, lockdown)..." autocomplete="off">
+        <kbd class="mono" style="font-size: 0.68rem; background: var(--bg-surface-elevated); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-cyan); color: var(--cyan);">ESC</kbd>
+      </div>
+      <div class="cmd-palette-list" id="cmd-palette-list">
+        <!-- Dynamically rendered results -->
+      </div>
+      <div class="cmd-palette-footer">
+        <div style="display: flex; gap: 0.75rem;">
+          <span><kbd>↑</kbd> <kbd>↓</kbd> navigate</span>
+          <span><kbd>↵</kbd> select</span>
+        </div>
+        <span style="color: var(--cyan);">VANTAVISIONAI COMMAND PALETTE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Firebase Cloud Integration Client Module -->
+  <script type="module" src="/static/firebase-client.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
+

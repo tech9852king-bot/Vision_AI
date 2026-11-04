@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all unmatched paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'tech9852king@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 0. Connection Health Check Document
+    match /test/{testId} {
+      allow read: if true;
+    }
+
+    // 1. Users Collection: Operator Profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        incoming().email is string &&
+        incoming().email.size() <= 256 &&
+        incoming().role in ['admin', 'operator', 'viewer'];
+      allow update: if isOwner(userId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'themePreference']);
+      allow delete: if isAdmin();
+    }
+
+    // 2. Events Collection: Visual Detection Stream
+    match /events/{eventId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        isValidId(eventId) &&
+        incoming().className is string &&
+        incoming().className.size() <= 64 &&
+        incoming().confidence is number &&
+        incoming().confidence >= 0.0 &&
+        incoming().confidence <= 1.0;
+      allow update, delete: if isAdmin();
+    }
+
+    // 3. Incidents Collection: Security Alerts
+    match /incidents/{incidentId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        isValidId(incidentId) &&
+        incoming().title is string &&
+        incoming().title.size() <= 200 &&
+        incoming().severity in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] &&
+        incoming().status in ['OPEN', 'INVESTIGATING', 'RESOLVED'];
+      allow update: if isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'details', 'resolvedAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 4. Policies Collection: Detection Rules
+    match /policies/{policyId} {
+      allow get, list: if isSignedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['enabled', 'condition', 'description']);
+    }
+
+    // 5. Audit Log Collection: Immutable Operations Trail
+    match /audit/{auditId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        isValidId(auditId) &&
+        incoming().action is string &&
+        incoming().action.size() <= 120 &&
+        incoming().status in ['SUCCESS', 'BLOCKED', 'FAILED'];
+      // Strictly immutable: No updates or deletions allowed under any condition
+      allow update, delete: if false;
+    }
+  }
+}

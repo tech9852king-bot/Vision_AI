@@ -1,0 +1,39 @@
+{
+  "name": "vantavisionai-master-upgrade",
+  "private": true,
+  "version": "2.0.0",
+  "scripts": {
+    "dev": "node dev-server.cjs",
+    "build": "npm run check:syntax && tsc --noEmit && node -e \"console.log('[BUILD] Static syntax validated; TypeScript checked (noEmit). Active app served directly from static/ without bundling.')\"",
+    "start": "node dev-server.cjs",
+    "check:syntax": "node -c dev-server.cjs && node -c static/app.js && node -c tests/test_api_endpoints.js && node -c tests/test_aleana_voice.js && node -c tests/test_multi_object_detection.js && node -c tests/test_copilot_multi_detection.js && node -c tests/test_firebase_integration.js",
+    "check:types": "tsc --noEmit",
+    "test": "node tests/test_api_endpoints.js && node tests/test_aleana_voice.js && node tests/test_multi_object_detection.js && node tests/test_copilot_multi_detection.js && node tests/test_firebase_integration.js && python3 -m unittest discover -s tests",
+    "lint": "node -e \"console.log('[LINT] Notice: ESLint is not configured in this prototype. Executing JavaScript syntax validation instead:');\" && npm run check:syntax"
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "firebase": "^13.1.0",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^8.3.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.21.0",
+    "typescript": "^7.0.2",
+    "@types/express": "^4.17.21"
+  }
+}
