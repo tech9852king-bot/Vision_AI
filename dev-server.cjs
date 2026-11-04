@@ -124,6 +124,70 @@ const DB = {
 
 let auditIdCounter = 2;
 
+// Camera Streams Registry for Automated Stream Health Monitoring
+const CAMERA_STREAMS = [
+  {
+    id: 'CAM-01-ENTRANCE',
+    name: 'Main Entrance Gate',
+    zone: 'Perimeter Sector Alpha',
+    protocol: 'RTSP (Simulated)',
+    status: 'ONLINE',
+    latency_ms: 14,
+    last_ping: new Date().toISOString(),
+    resolution: '1080p',
+    fps: 15,
+    simulated: true
+  },
+  {
+    id: 'CAM-02-LOBBY',
+    name: 'Executive Lobby West',
+    zone: 'Interior Reception',
+    protocol: 'RTSP (Simulated)',
+    status: 'ONLINE',
+    latency_ms: 18,
+    last_ping: new Date().toISOString(),
+    resolution: '1080p',
+    fps: 15,
+    simulated: true
+  },
+  {
+    id: 'CAM-03-BACKDOOR',
+    name: 'Back Door / Fire Exit',
+    zone: 'Emergency Egress South',
+    protocol: 'RTSP (Simulated)',
+    status: 'ONLINE',
+    latency_ms: 22,
+    last_ping: new Date().toISOString(),
+    resolution: '1080p',
+    fps: 15,
+    simulated: true
+  },
+  {
+    id: 'CAM-04-DOCK',
+    name: 'Loading Dock Perimeter',
+    zone: 'Cargo Bay North',
+    protocol: 'RTSP (Simulated)',
+    status: 'ONLINE',
+    latency_ms: 16,
+    last_ping: new Date().toISOString(),
+    resolution: '1080p',
+    fps: 15,
+    simulated: true
+  },
+  {
+    id: 'BROWSER-LOCAL-SCANNER',
+    name: 'Local Browser Scanner',
+    zone: 'Operator Workstation',
+    protocol: 'MediaDevices / WebRTC',
+    status: 'ONLINE',
+    latency_ms: 4,
+    last_ping: new Date().toISOString(),
+    resolution: 'Dynamic',
+    fps: 12,
+    simulated: false
+  }
+];
+
 function logAudit(tenantId, action, actor, status, details) {
   DB.audit_logs.unshift({
     id: auditIdCounter++,
@@ -487,6 +551,7 @@ const server = http.createServer(async (req, res) => {
   // 2. SYSTEM INFO & SUMMARY
   if (req.method === 'GET' && pathname === '/api/v1/system') {
     const uptime = Math.floor((Date.now() - START_TIME) / 1000);
+    const onlineStreams = CAMERA_STREAMS.filter(s => s.status === 'ONLINE').length;
     return sendJson(res, 200, {
       app_name: 'VantaVisionAI Funding Prototype',
       version: '1.0.0',
@@ -498,14 +563,84 @@ const server = http.createServer(async (req, res) => {
         provider: 'SIMULATED',
         real_camera_configured: false,
         browser_detector: 'TensorFlow.js COCO-SSD MobileNet V2',
-        cctv_streams_active: 0,
-        simulated_streams: ['CAM-01-ENTRANCE', 'CAM-02-LOBBY']
+        cctv_streams_active: CAMERA_STREAMS.filter(s => s.status === 'ONLINE' && s.simulated).length,
+        simulated_streams: ['CAM-01-ENTRANCE', 'CAM-02-LOBBY'],
+        streams_total: CAMERA_STREAMS.length,
+        streams_online: onlineStreams,
+        health_percentage: Math.round((onlineStreams / CAMERA_STREAMS.length) * 100)
       },
       brain_subsystem: {
         mode: 'CONTROLLED_COMMAND_INTERFACE',
         status: 'OPERATIONAL',
         allowlist_count: Object.keys(ALLOWLISTED_COMMANDS).length
       }
+    });
+  }
+
+  // Camera Stream Health Monitor Endpoints
+  if (req.method === 'GET' && pathname === '/api/v1/system/cameras') {
+    const onlineCount = CAMERA_STREAMS.filter(s => s.status === 'ONLINE').length;
+    const disconnectedCount = CAMERA_STREAMS.filter(s => s.status !== 'ONLINE').length;
+    const healthPercentage = Math.round((onlineCount / CAMERA_STREAMS.length) * 100);
+    return sendJson(res, 200, {
+      total_streams: CAMERA_STREAMS.length,
+      online_streams: onlineCount,
+      disconnected_streams: disconnectedCount,
+      health_percentage: healthPercentage,
+      status: disconnectedCount === 0 ? 'HEALTHY' : 'DEGRADED',
+      timestamp: new Date().toISOString(),
+      streams: CAMERA_STREAMS
+    });
+  }
+
+  if (req.method === 'POST' && pathname.startsWith('/api/v1/system/cameras/') && pathname.endsWith('/ping')) {
+    const streamId = pathname.replace('/api/v1/system/cameras/', '').replace('/ping', '');
+    const stream = CAMERA_STREAMS.find(s => s.id === streamId);
+    if (!stream) {
+      return sendJson(res, 404, { error: 'STREAM_NOT_FOUND', message: `Stream source '${streamId}' not found.` });
+    }
+    if (stream.status === 'ONLINE') {
+      stream.latency_ms = Math.round(10 + Math.random() * 20);
+    }
+    stream.last_ping = new Date().toISOString();
+    return sendJson(res, 200, {
+      stream_id: stream.id,
+      name: stream.name,
+      status: stream.status,
+      latency_ms: stream.status === 'ONLINE' ? stream.latency_ms : null,
+      ping_success: stream.status === 'ONLINE',
+      last_ping: stream.last_ping
+    });
+  }
+
+  if (req.method === 'POST' && pathname.startsWith('/api/v1/system/cameras/') && pathname.endsWith('/toggle')) {
+    const streamId = pathname.replace('/api/v1/system/cameras/', '').replace('/toggle', '');
+    const stream = CAMERA_STREAMS.find(s => s.id === streamId);
+    if (!stream) {
+      return sendJson(res, 404, { error: 'STREAM_NOT_FOUND', message: `Stream source '${streamId}' not found.` });
+    }
+    const oldStatus = stream.status;
+    stream.status = oldStatus === 'ONLINE' ? 'DISCONNECTED' : 'ONLINE';
+    stream.last_ping = new Date().toISOString();
+    stream.latency_ms = stream.status === 'ONLINE' ? Math.round(12 + Math.random() * 15) : null;
+
+    logAudit(
+      tenantId,
+      stream.status === 'DISCONNECTED' ? 'CAMERA_STREAM_DISCONNECTED' : 'CAMERA_STREAM_RECONNECTED',
+      actor,
+      stream.status === 'DISCONNECTED' ? 'WARNING' : 'SUCCESS',
+      `Camera stream '${stream.id}' (${stream.name}) state changed to ${stream.status}`
+    );
+
+    broadcastRealtimeTelemetry('CAMERA_STREAM_STATUS_CHANGED', stream, tenantId);
+
+    return sendJson(res, 200, {
+      stream_id: stream.id,
+      name: stream.name,
+      previous_status: oldStatus,
+      new_status: stream.status,
+      latency_ms: stream.latency_ms,
+      timestamp: stream.last_ping
     });
   }
 

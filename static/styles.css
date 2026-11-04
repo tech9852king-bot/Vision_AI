@@ -2920,3 +2920,78 @@ html[data-theme="light"] .filter-action-btn.active-preset {
   color: #0369a1;
 }
 
+/* Automated Camera Stream Health Monitor Card Styling */
+.stream-health-card {
+  background: rgba(10, 16, 32, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.stream-health-card.stream-online {
+  border-left: 3px solid var(--accent-emerald);
+}
+.stream-health-card.stream-disconnected {
+  border-left: 3px solid var(--accent-rose);
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.35);
+}
+.stream-health-card:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+.stream-health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.stream-health-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+}
+.stream-health-zone {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+.stream-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  padding: 0.2rem 0;
+}
+.stream-metric-label {
+  color: var(--text-dim);
+}
+.stream-metric-val {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+.stream-health-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+html[data-theme="light"] .stream-health-card {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+html[data-theme="light"] .stream-health-card.stream-disconnected {
+  background: #fff1f2;
+  border-color: #f43f5e;
+}
+html[data-theme="light"] .stream-health-title {
+  color: #0f172a;
+}
+
+

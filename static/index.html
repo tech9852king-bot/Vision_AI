@@ -1673,6 +1673,53 @@ Simulation runner ready. Click above to test complete detection-to-incident life
               </div>
             </div>
           </div>
+
+          <!-- Automated Camera Stream Health Monitor Card -->
+          <div class="vanta-card" id="card-camera-health-monitor" style="margin-top: 1.25rem;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); display: flex; align-items: center; justify-content: center; color: var(--accent-cyan);">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="card-title" style="margin: 0; font-size: 0.95rem;">Automated Camera Stream Health Monitor</div>
+                  <div style="font-size: 0.73rem; color: var(--text-dim);" class="mono">Continuous stream pinging & real-time disconnect detection</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span class="badge badge-emerald mono" id="camera-health-overall-badge">
+                  <span class="live-dot" style="background: var(--accent-emerald);"></span>
+                  <span id="camera-health-overall-text">Feeds: 5/5 Active (100%)</span>
+                </span>
+                <button class="btn btn-sm btn-primary mono" id="btn-ping-all-cameras" style="padding: 0.35rem 0.75rem;">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span>Ping All Streams</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Feed Disconnect Alert Banner -->
+            <div id="camera-feed-disconnect-alert" style="display: none; background: rgba(244, 63, 94, 0.12); border: 1px solid var(--accent-rose); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-top: 1rem; align-items: center; justify-content: space-between; gap: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <span class="badge badge-critical mono" style="font-size: 0.7rem;">DISCONNECT DETECTED</span>
+                <span id="camera-feed-disconnect-text" style="font-size: 0.8rem; color: #fecdd3;">Warning: Camera feed signal lost. Stream is unreachable.</span>
+              </div>
+              <span id="camera-feed-disconnect-timestamp" class="mono" style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;"></span>
+            </div>
+
+            <!-- Camera Stream Sources Grid -->
+            <div id="camera-health-streams-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.85rem; margin-top: 1.15rem;">
+              <div style="color: var(--text-muted); font-size: 0.8rem; padding: 1rem;" class="mono">Initializing camera health stream monitor...</div>
+            </div>
+
+            <!-- Health Footer & Monitor Stats -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.15rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle); font-size: 0.74rem; color: var(--text-dim);" class="mono">
+              <span id="camera-monitor-status-text">Health Monitor: Polling every 8s &bull; Auto-ping: Active</span>
+              <span id="camera-monitor-packet-stat">Streams Pinged: 5 &bull; Signal Stability: 100%</span>
+            </div>
+          </div>
         </section>
 
       </main>

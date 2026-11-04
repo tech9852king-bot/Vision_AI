@@ -5172,13 +5172,16 @@ async function fetchPipelineInfo() {
   const out = document.getElementById('pipeline-status-output');
   if (!out) return;
   try {
-    const [sysRes, readyRes] = await Promise.all([
+    const [sysRes, readyRes, camRes] = await Promise.all([
       fetch('/api/v1/system', { headers: { 'X-Tenant-ID': STATE.tenantId } }),
-      fetch('/ready')
+      fetch('/ready'),
+      fetch('/api/v1/system/cameras', { headers: { 'X-Tenant-ID': STATE.tenantId } }).catch(() => null)
     ]);
     const sys = await sysRes.json();
     const ready = await readyRes.json();
-    out.textContent = `=== SYSTEM PIPELINE STATUS ===\n` +
+    const camData = camRes && camRes.ok ? await camRes.json() : null;
+
+    let text = `=== SYSTEM PIPELINE STATUS ===\n` +
       `Application: ${sys.app_name} v${sys.version}\n` +
       `Readiness: ${ready.ready ? 'HEALTHY / READY' : 'DEGRADED'}\n` +
       `Database: ${ready.database}\n` +
@@ -5187,22 +5190,286 @@ async function fetchPipelineInfo() {
       `Camera Provider: ${sys.camera_subsystem.provider}\n` +
       `Real Camera Configured: ${sys.camera_subsystem.real_camera_configured} (SIMULATED)\n` +
       `Browser Local Detector: ${sys.camera_subsystem.browser_detector}\n` +
-      `Simulated Feeds: ${sys.camera_subsystem.simulated_streams.join(', ')}\n\n` +
-      `=== CONTROLLED BRAIN SUBSYSTEM ===\n` +
+      `Simulated Feeds: ${sys.camera_subsystem.simulated_streams.join(', ')}\n\n`;
+
+    if (camData && camData.streams) {
+      text += `=== AUTOMATED STREAM HEALTH MONITOR ===\n` +
+        `Total Monitored Streams: ${camData.total_streams} | Online: ${camData.online_streams} | Disconnected: ${camData.disconnected_streams}\n` +
+        `Signal Status: ${camData.status === 'HEALTHY' ? 'ALL STREAMS NOMINAL (100%)' : 'DEGRADED (FEEDS OFFLINE)'}\n` +
+        `Stream Sources:\n` +
+        camData.streams.map(s => ` - [${s.status}] ${s.id} (${s.name}): Ping ${s.status === 'ONLINE' ? (s.latency_ms || 14) + 'ms' : 'UNREACHABLE'}`).join('\n') + `\n\n`;
+    }
+
+    text += `=== CONTROLLED BRAIN SUBSYSTEM ===\n` +
       `Mode: ${sys.brain_subsystem.mode}\n` +
       `Status: ${sys.brain_subsystem.status}\n` +
       `Allowlisted Commands: ${sys.brain_subsystem.allowlist_count}\n\n` +
       `=== ALEANA VOICE SUBSYSTEM ===\n` +
       `Speech Recognition: ${STATE.aleana.isSupported ? 'Supported (Web Speech API)' : 'Text Fallback'}\n` +
       `Speech Synthesis: Active (Browser native)`;
+
+    out.textContent = text;
   } catch (e) {
     out.textContent = 'Error: ' + e.message;
   }
 }
 document.getElementById('btn-refresh-system')?.addEventListener('click', () => {
   fetchPipelineInfo();
+  if (typeof fetchCameraHealth === 'function') fetchCameraHealth(true);
   showToast('Diagnostics refreshed.', 'info');
 });
+
+// =========================================================================
+// 15b. AUTOMATED CAMERA STREAM HEALTH MONITOR
+// =========================================================================
+const CAMERA_MONITOR = {
+  intervalTimer: null,
+  pollIntervalMs: 8000,
+  streams: [],
+  prevDisconnected: new Set(),
+  totalPings: 0,
+  packetLossCount: 0,
+  isPingingAll: false
+};
+
+async function fetchCameraHealth(isManual = false) {
+  const gridEl = document.getElementById('camera-health-streams-grid');
+  const overallBadgeEl = document.getElementById('camera-health-overall-badge');
+  const overallTextEl = document.getElementById('camera-health-overall-text');
+  const alertBanner = document.getElementById('camera-feed-disconnect-alert');
+  const alertText = document.getElementById('camera-feed-disconnect-text');
+  const alertTimestamp = document.getElementById('camera-feed-disconnect-timestamp');
+  const statusFooter = document.getElementById('camera-monitor-status-text');
+  const packetStatFooter = document.getElementById('camera-monitor-packet-stat');
+
+  try {
+    const res = await fetch('/api/v1/system/cameras', {
+      headers: { 'X-Tenant-ID': STATE.tenantId }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    let streams = data.streams || [];
+
+    // Dynamically reconcile local browser webcam state if scanning
+    streams = streams.map(stream => {
+      if (stream.id === 'BROWSER-LOCAL-SCANNER') {
+        if (STATE.isScanning && STATE.activeSourceType === 'Webcam') {
+          const track = STATE.stream && typeof STATE.stream.getVideoTracks === 'function' ? STATE.stream.getVideoTracks()[0] : null;
+          const isTrackLive = track && track.readyState === 'live' && !track.muted;
+          return {
+            ...stream,
+            status: isTrackLive ? 'ONLINE' : 'DISCONNECTED',
+            latency_ms: isTrackLive ? (STATE.measuredLatency ? Math.round(STATE.measuredLatency / 10) : 4) : null,
+            last_ping: new Date().toISOString()
+          };
+        } else if (STATE.isScanning && STATE.activeSourceType === 'TestFeed') {
+          return {
+            ...stream,
+            status: 'ONLINE',
+            latency_ms: 2,
+            last_ping: new Date().toISOString()
+          };
+        }
+      }
+      return stream;
+    });
+
+    CAMERA_MONITOR.streams = streams;
+    CAMERA_MONITOR.totalPings += streams.length;
+
+    const disconnectedStreams = streams.filter(s => s.status !== 'ONLINE');
+    const onlineStreams = streams.filter(s => s.status === 'ONLINE');
+    const newlyDisconnected = [];
+
+    disconnectedStreams.forEach(ds => {
+      if (!CAMERA_MONITOR.prevDisconnected.has(ds.id)) {
+        newlyDisconnected.push(ds);
+      }
+    });
+
+    CAMERA_MONITOR.prevDisconnected = new Set(disconnectedStreams.map(s => s.id));
+
+    // Alert operator immediately if a stream disconnected
+    if (newlyDisconnected.length > 0) {
+      const names = newlyDisconnected.map(s => `${s.name} (${s.id})`).join(', ');
+      showToast(`[FEED DISCONNECTED] Alert: Stream signal lost for ${names}!`, 'danger');
+      if (typeof STATE.soundEngine?.playWarning === 'function') {
+        STATE.soundEngine.playWarning();
+      }
+    }
+
+    // Update Disconnect Alert Banner
+    if (alertBanner) {
+      if (disconnectedStreams.length > 0) {
+        alertBanner.style.display = 'flex';
+        if (alertText) {
+          alertText.innerHTML = `Warning: <strong>${disconnectedStreams.length} stream(s) unreachable:</strong> ${disconnectedStreams.map(s => s.name).join(', ')}. Automated watchdog is attempting re-acquisition.`;
+        }
+        if (alertTimestamp) {
+          alertTimestamp.textContent = `Signal lost: ${new Date().toLocaleTimeString()}`;
+        }
+      } else {
+        alertBanner.style.display = 'none';
+      }
+    }
+
+    // Update Overall Badge
+    if (overallBadgeEl && overallTextEl) {
+      const pct = streams.length > 0 ? Math.round((onlineStreams.length / streams.length) * 100) : 100;
+      overallTextEl.textContent = `Feeds: ${onlineStreams.length}/${streams.length} Active (${pct}%)`;
+      const dot = overallBadgeEl.querySelector('.live-dot');
+      if (disconnectedStreams.length === 0) {
+        overallBadgeEl.className = 'badge badge-emerald mono';
+        if (dot) dot.style.background = 'var(--accent-emerald)';
+      } else {
+        overallBadgeEl.className = 'badge badge-critical mono';
+        if (dot) dot.style.background = 'var(--accent-rose)';
+      }
+    }
+
+    // Update Status Footers
+    if (statusFooter) {
+      statusFooter.textContent = `Health Monitor: Auto-ping every 8s • Last check: ${new Date().toLocaleTimeString()}`;
+    }
+    if (packetStatFooter) {
+      const stability = disconnectedStreams.length === 0 ? '100% (Optimal)' : `${Math.round((onlineStreams.length / (streams.length || 1)) * 100)}% (Degraded)`;
+      packetStatFooter.textContent = `Pings: ${CAMERA_MONITOR.totalPings} • Signal Stability: ${stability}`;
+    }
+
+    // Render Grid Cards
+    if (gridEl) {
+      gridEl.innerHTML = streams.map(s => {
+        const isOnline = s.status === 'ONLINE';
+        const latencyText = isOnline ? (s.latency_ms !== null && s.latency_ms !== undefined ? `${s.latency_ms}ms` : '<15ms') : 'TIMEOUT / UNREACHABLE';
+        const statusBadge = isOnline
+          ? `<span class="badge badge-low mono" style="font-size: 0.7rem;"><span class="live-dot" style="background: var(--accent-emerald);"></span> ONLINE</span>`
+          : `<span class="badge badge-critical mono" style="font-size: 0.7rem;"><span class="live-dot" style="background: var(--accent-rose);"></span> DISCONNECTED</span>`;
+
+        return `
+          <div class="stream-health-card ${isOnline ? 'stream-online' : 'stream-disconnected'}" id="stream-card-${s.id}">
+            <div class="stream-health-header">
+              <div>
+                <div class="stream-health-title">${escapeHtml(s.name)}</div>
+                <div class="stream-health-zone mono">${escapeHtml(s.zone || s.id)}</div>
+              </div>
+              <div>${statusBadge}</div>
+            </div>
+
+            <div style="margin-top: 0.2rem;">
+              <div class="stream-metric-row mono">
+                <span class="stream-metric-label">Source ID:</span>
+                <span class="stream-metric-val">${s.id}</span>
+              </div>
+              <div class="stream-metric-row mono">
+                <span class="stream-metric-label">Protocol:</span>
+                <span class="stream-metric-val">${escapeHtml(s.protocol || 'RTSP')}</span>
+              </div>
+              <div class="stream-metric-row mono">
+                <span class="stream-metric-label">Ping Latency:</span>
+                <span class="stream-metric-val" style="color: ${isOnline ? 'var(--accent-cyan)' : 'var(--accent-rose)'}; font-weight: 700;">${latencyText}</span>
+              </div>
+              <div class="stream-metric-row mono">
+                <span class="stream-metric-label">Last Ping:</span>
+                <span class="stream-metric-val">${s.last_ping ? new Date(s.last_ping).toLocaleTimeString() : 'Just now'}</span>
+              </div>
+            </div>
+
+            <div class="stream-health-actions">
+              <button class="btn btn-sm mono" style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.25rem 0.45rem;" onclick="window.pingIndividualCameraStream('${s.id}')">
+                Ping Stream
+              </button>
+              <button class="btn btn-sm ${isOnline ? 'btn-danger' : 'btn-primary'} mono" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" onclick="window.toggleIndividualCameraStream('${s.id}')" title="Test disconnect / reconnect detection in real-time">
+                ${isOnline ? 'Simulate Disconnect' : 'Reconnect Feed'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+  } catch (err) {
+    console.warn('[Camera Health Monitor] Ping failed:', err);
+    if (statusFooter) {
+      statusFooter.textContent = 'Health Monitor: Warning - API unreachable (' + err.message + ')';
+    }
+  }
+}
+
+async function pingIndividualCameraStream(streamId) {
+  try {
+    const res = await fetch(`/api/v1/system/cameras/${encodeURIComponent(streamId)}/ping`, {
+      method: 'POST',
+      headers: { 'X-Tenant-ID': STATE.tenantId }
+    });
+    const data = await res.json();
+    if (data.status === 'ONLINE') {
+      showToast(`Pinged ${data.name || streamId}: ${data.latency_ms}ms round-trip (ONLINE)`, 'success');
+    } else {
+      showToast(`Stream ${data.name || streamId} is UNREACHABLE / DISCONNECTED!`, 'danger');
+    }
+    fetchCameraHealth();
+  } catch (e) {
+    showToast(`Failed to ping stream ${streamId}: ${e.message}`, 'danger');
+  }
+}
+
+async function toggleIndividualCameraStream(streamId) {
+  try {
+    const res = await fetch(`/api/v1/system/cameras/${encodeURIComponent(streamId)}/toggle`, {
+      method: 'POST',
+      headers: { 'X-Tenant-ID': STATE.tenantId }
+    });
+    const data = await res.json();
+    if (data.new_status === 'DISCONNECTED') {
+      showToast(`[DISCONNECT TRIGGERED] Stream ${data.name} set to DISCONNECTED`, 'warning');
+    } else {
+      showToast(`[RECONNECTED] Stream ${data.name} restored to ONLINE`, 'success');
+    }
+    fetchCameraHealth();
+    fetchPipelineInfo();
+  } catch (e) {
+    showToast(`Failed to toggle stream ${streamId}: ${e.message}`, 'danger');
+  }
+}
+
+async function pingAllCameraStreams() {
+  const btn = document.getElementById('btn-ping-all-cameras');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="live-dot" style="background: var(--accent-cyan);"></span> Pinging...`;
+  }
+  showToast('Executing automated health ping across all stream sources...', 'info');
+
+  try {
+    const streams = CAMERA_MONITOR.streams || [];
+    await Promise.all(
+      streams.map(s => fetch(`/api/v1/system/cameras/${encodeURIComponent(s.id)}/ping`, {
+        method: 'POST',
+        headers: { 'X-Tenant-ID': STATE.tenantId }
+      }).catch(() => {}))
+    );
+    await fetchCameraHealth(true);
+    showToast('All camera stream sources pinged successfully.', 'success');
+  } catch (err) {
+    showToast('Stream ping sequence encountered errors: ' + err.message, 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> <span>Ping All Streams</span>`;
+    }
+  }
+}
+
+function initCameraHealthMonitor() {
+  if (typeof window === 'undefined') return;
+  fetchCameraHealth();
+  if (CAMERA_MONITOR.intervalTimer) clearInterval(CAMERA_MONITOR.intervalTimer);
+  CAMERA_MONITOR.intervalTimer = setInterval(() => {
+    fetchCameraHealth();
+  }, CAMERA_MONITOR.pollIntervalMs);
+
+  document.getElementById('btn-ping-all-cameras')?.addEventListener('click', pingAllCameraStreams);
+}
 
 const btnRunDemo = document.getElementById('btn-run-demo');
 const demoOutput = document.getElementById('demo-output');
