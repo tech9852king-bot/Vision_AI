@@ -1,10 +1,10 @@
-"""Pydantic schemas for VantaVisionAI Next-Generation Multi-Device Platform"""
+"""Pydantic schemas for VantaVisionAI Next-Generation Multi-Device & C4ISR Singularity Platform"""
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 
 class BrainCommandRequest(BaseModel):
-    command: str = Field(..., description="Allowlisted Brain command name: help, status, capabilities, summary, incidents, policies, cameras, devices, zones, events, diagnostics, audit, troubleshoot, tools")
+    command: str = Field(..., description="Allowlisted Brain command name: help, status, capabilities, summary, incidents, policies, cameras, devices, zones, correlations, events, diagnostics, audit, troubleshoot, tools, swarm, twin, evaluate, predict, cuas")
     args: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Optional command arguments")
     tool: Optional[str] = Field(default=None, description="Optional direct tool name to execute")
 
@@ -91,6 +91,7 @@ class IncidentResponse(BaseModel):
     policy_id: Optional[str] = None
     camera_id: Optional[str] = None
     device_id: Optional[str] = None
+    track_id: Optional[str] = None
     zone_id: Optional[str] = None
     details: Optional[str] = None
 
@@ -133,18 +134,27 @@ class DemoRunRequest(BaseModel):
 
 class DeviceRegisterRequest(BaseModel):
     device_id: Optional[str] = None
-    display_name: str = Field(default="Mobile Camera Node")
-    device_category: str = Field(default="Smartphone")
+    name: Optional[str] = Field(default="Mobile Camera Node")
+    display_name: Optional[str] = Field(default="Mobile Camera Node")
+    device_type: Optional[str] = Field(default="mobile")
+    device_category: Optional[str] = Field(default="Smartphone")
+    role: Optional[str] = Field(default="CAMERA_NODE")
+    permission_profile: Optional[str] = Field(default="CAMERA_PUBLISHER")
+    camera_id: Optional[str] = Field(default=None)
+    active_camera_id: Optional[str] = Field(default="CAM-MOBILE-01")
+    facing_mode: Optional[str] = Field(default="environment")
+    capabilities: Optional[List[str]] = Field(default_factory=lambda: ["webcam", "coco-ssd", "webrtc"])
+    camera_capabilities: Optional[List[str]] = Field(default_factory=lambda: ["user", "environment"])
+    stream_mode: Optional[str] = Field(default="METADATA_ONLY")
     os_info: Optional[str] = Field(default="Mobile OS")
     browser_info: Optional[str] = Field(default="Mobile Browser")
-    camera_capabilities: Optional[List[str]] = Field(default_factory=lambda: ["user", "environment"])
-    active_camera_id: Optional[str] = Field(default="CAM-MOBILE-01")
     assigned_workspace: Optional[str] = Field(default="Primary SOC")
     assigned_zone: Optional[str] = Field(default="ZONE-01-PERIMETER")
-    permission_profile: Optional[str] = Field(default="CAMERA_PUBLISHER")
 
 
 class PairingCreateRequest(BaseModel):
+    role: Optional[str] = "CAMERA_NODE"
+    target_label: Optional[str] = "Mobile Camera Node"
     assigned_zone: Optional[str] = "ZONE-01-PERIMETER"
     assigned_workspace: Optional[str] = "Primary SOC"
     permission_profile: Optional[str] = "CAMERA_PUBLISHER"
@@ -153,19 +163,29 @@ class PairingCreateRequest(BaseModel):
 
 class PairingClaimRequest(BaseModel):
     pairing_code: str
+    device_name: Optional[str] = "Paired Camera Client"
     display_name: Optional[str] = "Paired Camera Client"
+    device_type: Optional[str] = "mobile"
     device_category: Optional[str] = "Smartphone"
+    camera_id: Optional[str] = None
+    active_camera_id: Optional[str] = "CAM-PAIRED-01"
+    facing_mode: Optional[str] = "environment"
+    capabilities: Optional[List[str]] = Field(default_factory=lambda: ["webcam", "coco-ssd", "webrtc", "qr-paired"])
+    camera_capabilities: Optional[List[str]] = Field(default_factory=lambda: ["user", "environment"])
     os_info: Optional[str] = "Mobile OS"
     browser_info: Optional[str] = "PWA Client"
-    camera_capabilities: Optional[List[str]] = Field(default_factory=lambda: ["user", "environment"])
-    active_camera_id: Optional[str] = "CAM-PAIRED-01"
 
 
 class DeviceHeartbeatRequest(BaseModel):
+    status: Optional[str] = "ONLINE"
+    stream_mode: Optional[str] = "METADATA_ONLY"
     stream_status: Optional[str] = "METADATA_EDGE"
     detection_status: Optional[str] = "ACTIVE"
+    facing_mode: Optional[str] = None
     active_camera_id: Optional[str] = None
+    battery_pct: Optional[int] = 100
     battery_level: Optional[int] = 100
+    latency_ms: Optional[float] = 32.0
     avg_latency_ms: Optional[float] = 32.0
 
 
@@ -173,7 +193,9 @@ class ZoneCreateRequest(BaseModel):
     name: str
     zone_type: Optional[str] = "RESTRICTED"
     camera_id: Optional[str] = "CAM-01-ENTRANCE"
-    polygon_points: List[List[float]] = Field(default_factory=lambda: [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]])
+    polygon: Optional[List[List[float]]] = Field(default_factory=lambda: [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]])
+    polygon_points: Optional[List[List[float]]] = Field(default_factory=lambda: [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]])
+    max_dwell_sec: Optional[int] = 10
     dwell_threshold_sec: Optional[int] = 10
     max_occupancy: Optional[int] = 3
     severity: Optional[str] = "HIGH"

@@ -4,7 +4,7 @@ Pure Python module with zero external framework dependencies.
 """
 from typing import Dict, Any, Tuple, Optional, List
 
-# Primary allowlisted commands and structured operational intents
+# Primary allowlisted commands and structured operational intents (20 allowlisted commands)
 ALLOWLISTED_COMMANDS: Dict[str, str] = {
     "help": "List all available allowlisted commands and syntax guide",
     "status": "Check backend health, camera provider mode, and system parameters",
@@ -20,7 +20,12 @@ ALLOWLISTED_COMMANDS: Dict[str, str] = {
     "tools": "List approved Brain tools and execution schemas",
     "devices": "Inspect registered multi-device camera nodes, pairing status, and health",
     "zones": "Inspect polygon security zones, occupancy limits, and loitering rules",
-    "correlations": "Run cross-camera spatiotemporal object correlation across active nodes"
+    "correlations": "Run cross-camera spatiotemporal object correlation across active nodes",
+    "swarm": "Coordinate autonomous multi-UAV tactical drone fleet and battery relief handoffs",
+    "twin": "Query 4-sector C4ISR Geo-Spatial Digital Twin topology and active track projections",
+    "evaluate": "Evaluate multi-clause compound policy rules against live or candidate telemetry",
+    "predict": "Compute Kalman-damped T+1s..T+3s target trajectory and zone breach probability",
+    "cuas": "Engage Counter-UAS containment protocols against unauthorized aerial targets"
 }
 
 # Mapping of commands to underlying approved tools
@@ -36,8 +41,14 @@ COMMAND_TOOL_MAPPING: Dict[str, str] = {
     "troubleshoot": "run_troubleshooter",
     "devices": "get_device_inventory",
     "zones": "get_zone_intelligence",
-    "correlations": "correlate_cross_camera_events"
+    "correlations": "correlate_cross_camera_events",
+    "swarm": "coordinate_drone_swarm",
+    "twin": "query_digital_twin_state",
+    "evaluate": "evaluate_compound_policy",
+    "predict": "predict_target_trajectory",
+    "cuas": "engage_counter_uas"
 }
+
 
 def validate_brain_command(cmd_raw: str) -> Tuple[bool, str]:
     """

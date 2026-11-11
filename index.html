@@ -529,6 +529,18 @@
                 </div>
               </div>
 
+              <!-- J.A.R.V.I.S. C4ISR Tactical HUD Controls Bar -->
+              <div class="scanner-jarvis-hud-bar" id="scanner-jarvis-hud-bar" style="margin-top: 0.75rem; background: rgba(5,11,22,0.9); border: 1px solid rgba(0,229,255,0.28); border-radius: 6px; padding: 0.5rem 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="mono" style="font-size: 0.72rem; color: #00e5ff; font-weight: 700;">J.A.R.V.I.S. C4ISR HUD:</span>
+                  <span class="badge badge-cyan mono" id="jarvis-hud-lock-badge" style="font-size: 0.65rem;">RETICLE ACTIVE &bull; CLICK TARGET TO LOCK</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-sm mono" id="btn-toggle-quad-matrix" title="Toggle 4-Channel C4ISR Quad-Camera Matrix" style="padding: 0.22rem 0.6rem; font-size: 0.7rem; border-color: #00e5ff; color: #00e5ff;">Quad Matrix: OFF</button>
+                  <button type="button" class="btn btn-sm mono" id="btn-run-benchmark" title="Run Vision &amp; Edge Hardware Benchmark" style="padding: 0.22rem 0.6rem; font-size: 0.7rem; border-color: #10b981; color: #10b981;">Run Benchmark</button>
+                </div>
+              </div>
+
               <!-- Forensic Time-Machine Replay HUD Scrubber -->
               <div class="forensic-timeline-bar" id="forensic-timeline-bar" style="margin-top: 0.75rem; background: rgba(5,11,22,0.85); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.55rem 0.85rem; display: flex; flex-direction: column; gap: 0.35rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
@@ -536,10 +548,12 @@
                     <span class="mono" style="font-size: 0.72rem; color: #00e5ff; font-weight: bold;">TIME-MACHINE REPLAY:</span>
                     <span class="badge badge-cyan mono" id="forensic-replay-mode-badge" style="font-size: 0.65rem;">LIVE STREAM</span>
                     <span class="mono" id="forensic-timestamp-display" style="font-size: 0.7rem; color: var(--text-dim);">T-00:00 (NOW)</span>
+                    <span class="mono" id="timeline-replay-status" style="font-size: 0.68rem; color: #10b981;">BUFFER: READY (120F MAX)</span>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.35rem;">
                     <button type="button" class="btn btn-sm mono" id="btn-replay-step-back" title="Step Back 5s" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">&lt;&lt; 5s</button>
                     <button type="button" class="btn btn-sm btn-primary mono" id="btn-replay-play-pause" title="Play / Pause Replay" style="padding: 0.2rem 0.65rem; font-size: 0.7rem;">Play</button>
+                    <button type="button" class="btn btn-sm mono" id="btn-timeline-replay-toggle" title="Toggle Time-Machine Frame Scrubbing" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; border-color: #c084fc; color: #c084fc;">Scrub</button>
                     <button type="button" class="btn btn-sm mono" id="btn-replay-step-forward" title="Step Forward 5s" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">5s &gt;&gt;</button>
                     <button type="button" class="btn btn-sm mono" id="btn-replay-live" title="Return to Live Stream" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; border-color: #10b981; color: #10b981;">LIVE</button>
                   </div>
@@ -547,6 +561,7 @@
                 <div style="display: flex; align-items: center; gap: 0.65rem;">
                   <span class="mono" style="font-size: 0.68rem; color: var(--text-dim);">-5m</span>
                   <input type="range" id="forensic-timeline-slider" min="0" max="300" value="300" step="1" style="flex: 1; accent-color: #00e5ff; cursor: pointer;">
+                  <input type="range" id="timeline-scrubber-slider" min="0" max="119" value="119" step="1" title="Frame Index Scrubber (0..119)" style="width: 110px; accent-color: #c084fc; cursor: pointer;">
                   <span class="mono" style="font-size: 0.68rem; color: #10b981;">Live</span>
                 </div>
               </div>

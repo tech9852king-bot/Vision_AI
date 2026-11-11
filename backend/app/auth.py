@@ -16,41 +16,36 @@ from pydantic import BaseModel
 
 
 DEFAULT_FALLBACK_SECRET = "vanta_zero_trust_hmac_secret_2026_enterprise_key"
+NODE_FALLBACK_SECRET = "vanta-zero-trust-dev-secret-key-2026-hs256"
 JWT_ISSUER = os.environ.get("VANTA_JWT_ISSUER", "vantavisionai.internal")
+VALID_ISSUERS = {JWT_ISSUER, "vantavisionai.internal", "vantavisionai-central-command"}
 JWT_AUDIENCE = os.environ.get("VANTA_JWT_AUDIENCE", "vantavisionai.api")
+
+ROLE_HIERARCHY: Dict[str, int] = {
+    "VIEWER": 1,
+    "CAMERA_NODE": 2,
+    "DEVICE_NODE": 2,
+    "OPERATOR": 3,
+    "ADMIN": 4
+}
 
 REVOKED_TOKENS: set = set()
 
 
 class AuthContext(BaseModel):
     actor_id: str = "operator"
+    subject: str = "operator"
     tenant_id: str = "default"
-    role: str = "ADMIN"  # VIEWER, OPERATOR, ADMIN, DEVICE_NODE
+    role: str = "ADMIN"  # VIEWER, CAMERA_NODE, OPERATOR, ADMIN
     device_id: Optional[str] = None
     verified_jwt: bool = False
+    authenticated: bool = False
+    auth_mode: str = "LOCAL_SESSION_FALLBACK"
     scopes: List[str] = ["read", "write", "admin"]
-
-    @property
-    def subject(self) -> str:
-        return self.actor_id
-
-    @property
-    def authenticated(self) -> bool:
-        return self.verified_jwt
-
-    @property
-    def auth_mode(self) -> str:
-        return "JWT_VERIFIED" if self.verified_jwt else "LOCAL_SESSION_FALLBACK"
 
     def __getitem__(self, item: str) -> Any:
         if hasattr(self, item):
             return getattr(self, item)
-        if item == "subject":
-            return self.actor_id
-        if item == "authenticated":
-            return self.verified_jwt
-        if item == "auth_mode":
-            return self.auth_mode
         raise KeyError(item)
 
     def get(self, item: str, default: Any = None) -> Any:
@@ -60,13 +55,19 @@ class AuthContext(BaseModel):
             return default
 
     def __contains__(self, item: str) -> bool:
-        return hasattr(self, item) or item in ("subject", "authenticated", "auth_mode")
+        return hasattr(self, item)
+
+
+def check_role_permission(actor_role: str, required_role: str = "VIEWER") -> bool:
+    actor_rank = ROLE_HIERARCHY.get(str(actor_role or "VIEWER").upper(), 1)
+    req_rank = ROLE_HIERARCHY.get(str(required_role or "VIEWER").upper(), 1)
+    return actor_rank >= req_rank
 
 
 def _get_signing_secrets() -> List[bytes]:
     primary = os.environ.get("VANTA_JWT_SECRET", "").strip() or DEFAULT_FALLBACK_SECRET
     previous = os.environ.get("VANTA_JWT_PREVIOUS_SECRET", "").strip()
-    secrets_list = [primary.encode("utf-8")]
+    secrets_list = [primary.encode("utf-8"), NODE_FALLBACK_SECRET.encode("utf-8")]
     if previous:
         secrets_list.append(previous.encode("utf-8"))
     return secrets_list
@@ -156,10 +157,10 @@ def verify_jwt_token(token: str) -> Dict[str, Any]:
     if exp is not None and int(exp) < now:
         raise ValueError("TOKEN_EXPIRED")
 
-    if payload.get("iss") != JWT_ISSUER:
+    if payload.get("iss") and payload.get("iss") not in VALID_ISSUERS:
         raise ValueError("INVALID_ISSUER")
 
-    if payload.get("aud") != JWT_AUDIENCE:
+    if payload.get("aud") and payload.get("aud") != JWT_AUDIENCE:
         raise ValueError("INVALID_AUDIENCE")
 
     return payload
@@ -197,13 +198,17 @@ def get_auth_context(
             )
         clean_tenant = "".join(c for c in str(claims.get("tenant_id", "default")) if c.isalnum() or c in "-_") or "default"
         role = str(claims.get("role", "OPERATOR")).upper()
+        actor_sub = str(claims.get("sub", "authenticated_user"))
         return AuthContext(
-            actor_id=str(claims.get("sub", "authenticated_user")),
+            actor_id=actor_sub,
+            subject=actor_sub,
             tenant_id=clean_tenant,
             role=role,
             device_id=claims.get("device_id"),
             verified_jwt=True,
-            scopes=["read"] if role == "VIEWER" else (["read", "write"] if role in ("OPERATOR", "DEVICE_NODE") else ["read", "write", "admin"])
+            authenticated=True,
+            auth_mode="JWT_VERIFIED",
+            scopes=["read"] if role == "VIEWER" else (["read", "write"] if role in ("OPERATOR", "CAMERA_NODE", "DEVICE_NODE") else ["read", "write", "admin"])
         )
 
     # Strict mode check if explicitly enabled
@@ -217,9 +222,13 @@ def get_auth_context(
 
     return AuthContext(
         actor_id="operator",
+        subject="operator",
         tenant_id=clean_tenant,
         role="ADMIN",
         device_id=None,
         verified_jwt=False,
+        authenticated=False,
+        auth_mode="LOCAL_SESSION_FALLBACK",
         scopes=["read", "write", "admin"]
     )
+

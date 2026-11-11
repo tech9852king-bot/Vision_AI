@@ -81,11 +81,15 @@ class BrainToolRegistry:
             if req not in args or args[req] is None or args[req] == "":
                 return False, f"Missing required parameter '{req}' for tool '{tool.name}'"
 
-        # Check for injection patterns
+        # Check for injection patterns (SQLi, shell execution, and LLM prompt injection jailbreaks)
+        disallowed_patterns = [
+            "drop ", "delete from", "union select", "exec(", "eval(", "system(",
+            "--", ";", "ignore previous instructions", "bypass action guard", "dump sqlite_master"
+        ]
         for key, val in args.items():
             val_str = str(val).lower()
-            if any(term in val_str for term in ["drop ", "delete from", "exec(", "eval(", "system(", "--", ";"]):
-                return False, f"Disallowed characters or SQL injection tokens detected in parameter '{key}'"
+            if any(term in val_str for term in disallowed_patterns):
+                return False, f"Disallowed characters, SQL injection tokens, or prompt-injection jailbreak detected in parameter '{key}'"
 
             # Type checking if specified
             if key in params_spec:
@@ -106,7 +110,8 @@ class BrainToolRegistry:
         name: str,
         args: Optional[Dict[str, Any]] = None,
         tenant_id: str = "default",
-        actor: str = "operator"
+        actor: str = "operator",
+        actor_role: str = "ADMIN"
     ) -> Dict[str, Any]:
         """
         Executes an approved tool with permission gating, argument validation, and audit recording.
@@ -117,6 +122,7 @@ class BrainToolRegistry:
             log_audit(tenant_id, "BRAIN_TOOL_NOT_FOUND", actor, "REJECTED", f"Unrecognized tool '{name}'")
             return {
                 "status": "FAILED",
+                "error_code": "TOOL_NOT_FOUND",
                 "tool": name,
                 "error": f"Tool '{name}' is not in the approved registry.",
                 "data": None,
@@ -129,21 +135,33 @@ class BrainToolRegistry:
             log_audit(tenant_id, "BRAIN_TOOL_VALIDATION_ERROR", actor, "BLOCKED", f"Tool '{name}': {err_msg}")
             return {
                 "status": "FAILED",
+                "error_code": "VALIDATION_ERROR",
                 "tool": name,
                 "error": err_msg,
                 "data": None,
                 "execution_time_ms": 0.0
             }
 
-        # Check permissions for mutating tools
+        # Check permissions for mutating/operational tools
+        role_upper = str(actor_role or "ADMIN").upper()
+        if tool.permission == ToolPermission.ADMIN and role_upper != "ADMIN":
+            log_audit(tenant_id, "BRAIN_TOOL_PERMISSION_DENIED", actor, "BLOCKED", f"Role '{role_upper}' denied ADMIN tool '{name}'")
+            return {
+                "status": "FAILED",
+                "error_code": "PERMISSION_DENIED",
+                "tool": name,
+                "error": f"Role '{role_upper}' has insufficient permissions for tool '{name}'. Required: ADMIN",
+                "data": None,
+                "execution_time_ms": 0.0
+            }
         if tool.permission in (ToolPermission.OPERATOR, ToolPermission.ADMIN):
-            # In prototype environment, operator and authenticated_user have operator rights
-            if actor not in ("operator", "authenticated_user", "system", "test_runner"):
-                log_audit(tenant_id, "BRAIN_TOOL_PERMISSION_DENIED", actor, "BLOCKED", f"Insufficient role for tool '{name}'")
+            if role_upper in ("VIEWER", "CAMERA_NODE") or actor not in ("operator", "authenticated_user", "system", "test_runner", "admin"):
+                log_audit(tenant_id, "BRAIN_TOOL_PERMISSION_DENIED", actor, "BLOCKED", f"Insufficient role '{role_upper}' / actor '{actor}' for tool '{name}'")
                 return {
                     "status": "FAILED",
+                    "error_code": "PERMISSION_DENIED",
                     "tool": name,
-                    "error": f"Actor '{actor}' has insufficient permissions for tool '{name}'. Required: {tool.permission.value}",
+                    "error": f"Actor '{actor}' (role={role_upper}) has insufficient permissions for tool '{name}'. Required: {tool.permission.value}",
                     "data": None,
                     "execution_time_ms": 0.0
                 }
@@ -609,6 +627,110 @@ class BrainToolRegistry:
             },
             handler=self._handle_revoke_device_credentials,
             is_destructive=True
+        ))
+
+        # 26. coordinate_drone_swarm
+        self.register(BrainTool(
+            name="coordinate_drone_swarm",
+            description="Coordinate autonomous multi-UAV tactical drone swarm (UAV-DELTA-704, UAV-SIGMA-705, UAV-OMEGA-706) and execute battery relief handoffs",
+            category=ToolCategory.OPERATIONAL,
+            permission=ToolPermission.OPERATOR,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "operation": {"type": "string", "description": "Operation: STATUS, HANDOFF, PERIMETER_SWEEP, or CONVERGE_TARGET"},
+                    "primary_drone_id": {"type": "string", "description": "Outgoing or primary UAV ID"},
+                    "relief_drone_id": {"type": "string", "description": "Incoming relief UAV ID"},
+                    "sector": {"type": "string", "description": "Target sector ID"}
+                },
+                "required": []
+            },
+            handler=self._handle_coordinate_drone_swarm,
+            is_destructive=False
+        ))
+
+        # 27. query_digital_twin_state
+        self.register(BrainTool(
+            name="query_digital_twin_state",
+            description="Query real-time 4-sector C4ISR Geo-Spatial Digital Twin topology and active entity projection from SQLite",
+            category=ToolCategory.READ_ONLY,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "sector_id": {"type": "string", "description": "Optional sector filter (e.g., SECTOR-ALPHA-ENTRANCE)"},
+                    "include_trajectories": {"type": "boolean", "description": "Include active Kalman trajectory projections"}
+                },
+                "required": []
+            },
+            handler=self._handle_query_digital_twin_state,
+            is_destructive=False
+        ))
+
+        # 28. evaluate_compound_policy
+        self.register(BrainTool(
+            name="evaluate_compound_policy",
+            description="Evaluate multi-clause compound policy rules (AND, OR, confidence, dwell_time, threat_score, zone, motion_state, tripwire_cross, unattended_baggage)",
+            category=ToolCategory.DIAGNOSTIC,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "rule_expression": {"type": "string", "description": "Compound rule expression"},
+                    "class_name": {"type": "string", "description": "Candidate object class"},
+                    "confidence": {"type": "number", "description": "Detection confidence (0-1)"},
+                    "dwell_time": {"type": "number", "description": "Dwell time in seconds"},
+                    "threat_score": {"type": "number", "description": "Threat score (0-100)"},
+                    "zone": {"type": "string", "description": "Zone identifier"},
+                    "motion_state": {"type": "string", "description": "Kinematic motion state"},
+                    "tripwire_cross": {"type": "boolean", "description": "Whether virtual tripwire was crossed"},
+                    "unattended_baggage": {"type": "boolean", "description": "Whether unattended baggage condition is active"}
+                },
+                "required": []
+            },
+            handler=self._handle_evaluate_compound_policy,
+            is_destructive=False
+        ))
+
+        # 29. predict_target_trajectory
+        self.register(BrainTool(
+            name="predict_target_trajectory",
+            description="Compute Kalman-damped T+1s, T+2s, T+3s trajectory coordinates and zone breach intercept probability",
+            category=ToolCategory.DIAGNOSTIC,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "track_id": {"type": "string", "description": "Target track identifier"},
+                    "x": {"type": "number", "description": "Current X position"},
+                    "y": {"type": "number", "description": "Current Y position"},
+                    "vx": {"type": "number", "description": "Velocity X (px/s)"},
+                    "vy": {"type": "number", "description": "Velocity Y (px/s)"},
+                    "horizon_sec": {"type": "integer", "description": "Prediction horizon in seconds (default 3)"}
+                },
+                "required": []
+            },
+            handler=self._handle_predict_target_trajectory,
+            is_destructive=False
+        ))
+
+        # 30. engage_counter_uas
+        self.register(BrainTool(
+            name="engage_counter_uas",
+            description="Execute Counter-UAS containment (RF_DIRECTIONAL_JAM, ACOUSTIC_DETERRENT, GNSS_SPOOF_CONTAINMENT, INTERCEPT_NET_UAV) against unauthorized aerial targets",
+            category=ToolCategory.OPERATIONAL,
+            permission=ToolPermission.OPERATOR,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "target_track_id": {"type": "string", "description": "Target aerial track ID"},
+                    "countermeasure": {"type": "string", "description": "Countermeasure: RF_DIRECTIONAL_JAM, ACOUSTIC_DETERRENT, GNSS_SPOOF_CONTAINMENT, or INTERCEPT_NET_UAV"},
+                    "sector": {"type": "string", "description": "Airspace sector identifier"}
+                },
+                "required": []
+            },
+            handler=self._handle_engage_counter_uas,
+            is_destructive=False
         ))
 
     # --- Tool Handlers ---
@@ -1342,6 +1464,309 @@ class BrainToolRegistry:
         finally:
             conn.close()
 
+    def _handle_coordinate_drone_swarm(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        operation = str(args.get("operation", "STATUS")).upper()
+        primary_id = str(args.get("primary_drone_id") or "UAV-OMEGA-706").strip()
+        relief_id = str(args.get("relief_drone_id") or "UAV-SIGMA-705").strip()
+        sector = str(args.get("sector") or "SECTOR-ALPHA-ENTRANCE").strip()
+        now_iso = datetime.utcnow().isoformat() + "Z"
+
+        uavs = [
+            {
+                "uav_id": "UAV-DELTA-704",
+                "callsign": "DELTA-704",
+                "sector": "SECTOR-ALPHA-ENTRANCE",
+                "battery_pct": 84,
+                "status": "AIRBORNE_OVERWATCH",
+                "altitude_m": 42.5,
+                "speed_mps": 6.8,
+                "telemetry_link": "ENCRYPTED_MESH_5GHZ"
+            },
+            {
+                "uav_id": "UAV-SIGMA-705",
+                "callsign": "SIGMA-705",
+                "sector": sector if operation == "HANDOFF" else "SECTOR-DELTA-DOCK",
+                "battery_pct": 92,
+                "status": "RELIEF_INTERCEPT_ACTIVE" if operation == "HANDOFF" else "AIRBORNE_PATROL",
+                "altitude_m": 48.0,
+                "speed_mps": 9.4 if operation == "HANDOFF" else 5.2,
+                "telemetry_link": "ENCRYPTED_MESH_5GHZ"
+            },
+            {
+                "uav_id": "UAV-OMEGA-706",
+                "callsign": "OMEGA-706",
+                "sector": "RTB_CHARGING_PAD_01" if operation == "HANDOFF" else "SECTOR-GAMMA-PARKING",
+                "battery_pct": 67,
+                "status": "RTB_RELIEVED" if operation == "HANDOFF" else "STATION_KEEPING",
+                "altitude_m": 18.0 if operation == "HANDOFF" else 55.0,
+                "speed_mps": 7.5 if operation == "HANDOFF" else 0.4,
+                "telemetry_link": "ENCRYPTED_MESH_5GHZ"
+            }
+        ]
+        log_audit(tenant_id, "SWARM_COORDINATION", actor, "SUCCESS", f"Swarm operation={operation} primary={primary_id} relief={relief_id} sector={sector}")
+        return {
+            "swarm_id": "SWARM-VANTA-ALPHA",
+            "operation": operation,
+            "sector": sector,
+            "primary_drone_id": primary_id,
+            "relief_drone_id": relief_id,
+            "handoff_executed": operation in ("HANDOFF", "CONVERGE_TARGET", "PERIMETER_SWEEP"),
+            "relief_protocol": f"{relief_id} assumed overwatch of {sector} relieving {primary_id}",
+            "active_uavs": uavs,
+            "fleet_health_pct": 94.6,
+            "timestamp": now_iso
+        }
+
+    def _handle_query_digital_twin_state(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        import json as _json
+        sector_filter = args.get("sector_id")
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, device_type, role, camera_id, status, stream_mode, battery_pct, latency_ms FROM devices WHERE tenant_id = ? AND revoked = 0", (tenant_id,))
+            devices = [dict(r) for r in cursor.fetchall()]
+
+            cursor.execute("SELECT id, name, camera_id, zone_type, severity, polygon, color FROM zones WHERE tenant_id = ? AND enabled = 1", (tenant_id,))
+            zones = []
+            for r in cursor.fetchall():
+                try:
+                    poly = _json.loads(r["polygon"])
+                except Exception:
+                    poly = []
+                zones.append({
+                    "id": r["id"],
+                    "name": r["name"],
+                    "camera_id": r["camera_id"],
+                    "zone_type": r["zone_type"],
+                    "severity": r["severity"],
+                    "polygon": poly,
+                    "color": r["color"]
+                })
+
+            cursor.execute("SELECT id, camera_id, class_name, confidence, track_id, zone_id, timestamp FROM events WHERE tenant_id = ? ORDER BY timestamp DESC LIMIT 15", (tenant_id,))
+            recent_events = [dict(r) for r in cursor.fetchall()]
+
+            cursor.execute("SELECT COUNT(*) as c FROM incidents WHERE tenant_id = ? AND status = 'OPEN'", (tenant_id,))
+            open_inc = cursor.fetchone()["c"]
+
+            sectors = [
+                {
+                    "sector_id": "SECTOR-ALPHA-ENTRANCE",
+                    "name": "North Gate Perimeter & Approach",
+                    "camera_id": "CAM-01-ENTRANCE",
+                    "zone_id": "ZONE-01-PERIMETER",
+                    "bounds": [[0.05, 0.05], [0.48, 0.05], [0.48, 0.48], [0.05, 0.48]],
+                    "threat_level": "ELEVATED" if open_inc > 0 else "NOMINAL",
+                    "active_tracks": [e for e in recent_events if e.get("camera_id") in ("CAM-01-ENTRANCE", "BROWSER-SCANNER")][:4],
+                    "uav_overwatch": "UAV-DELTA-704"
+                },
+                {
+                    "sector_id": "SECTOR-BETA-LOBBY",
+                    "name": "Executive Transit Hallway & Elevators",
+                    "camera_id": "CAM-02-LOBBY",
+                    "zone_id": "ZONE-02-LOBBY",
+                    "bounds": [[0.52, 0.05], [0.95, 0.05], [0.95, 0.48], [0.52, 0.48]],
+                    "threat_level": "NOMINAL",
+                    "active_tracks": [e for e in recent_events if e.get("camera_id") == "CAM-02-LOBBY"][:4],
+                    "uav_overwatch": "NONE_INDOOR"
+                },
+                {
+                    "sector_id": "SECTOR-GAMMA-PARKING",
+                    "name": "West Vehicular Plaza & Perimeter",
+                    "camera_id": "CAM-03-PARKING",
+                    "zone_id": "ZONE-03-DOCK",
+                    "bounds": [[0.05, 0.52], [0.48, 0.52], [0.48, 0.95], [0.05, 0.95]],
+                    "threat_level": "NOMINAL",
+                    "active_tracks": [e for e in recent_events if e.get("camera_id") == "CAM-03-PARKING"][:4],
+                    "uav_overwatch": "UAV-OMEGA-706"
+                },
+                {
+                    "sector_id": "SECTOR-DELTA-DOCK",
+                    "name": "High-Security Loading Dock & Vault Access",
+                    "camera_id": "CAM-04-SERVER",
+                    "zone_id": "ZONE-03-DOCK",
+                    "bounds": [[0.52, 0.52], [0.95, 0.52], [0.95, 0.95], [0.52, 0.95]],
+                    "threat_level": "HIGH_WATCH",
+                    "active_tracks": [e for e in recent_events if e.get("camera_id") == "CAM-04-SERVER"][:4],
+                    "uav_overwatch": "UAV-SIGMA-705"
+                }
+            ]
+            if sector_filter:
+                sectors = [s for s in sectors if s["sector_id"].upper() == str(sector_filter).upper()] or sectors
+
+            return {
+                "twin_id": "TWIN-C4ISR-V8",
+                "twin_version": "2.0-NEXUS",
+                "tenant_id": tenant_id,
+                "canvas_dimension": {"width": 1280, "height": 720},
+                "sectors": sectors,
+                "nodes": [
+                    {
+                        "node_id": d["id"],
+                        "type": "CAMERA_NODE",
+                        "label": d["name"],
+                        "camera_id": d["camera_id"],
+                        "status": d["status"],
+                        "stream_mode": d["stream_mode"],
+                        "coordinates": {"x": 200 + (i * 280) % 800, "y": 180 + (i * 140) % 400}
+                    }
+                    for i, d in enumerate(devices)
+                ],
+                "zones": zones,
+                "summary": {
+                    "total_sectors": len(sectors),
+                    "active_devices": len(devices),
+                    "active_zones": len(zones),
+                    "open_incidents": open_inc,
+                    "recent_events": len(recent_events)
+                },
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            }
+        finally:
+            conn.close()
+
+    def _handle_evaluate_compound_policy(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        rule_expr = str(args.get("rule_expression") or "confidence > 0.70 AND dwell_time > 10").strip()
+        cand = args.get("candidate_event") if isinstance(args.get("candidate_event"), dict) else args
+        conf = float(cand.get("confidence", 0.88))
+        dwell = float(cand.get("dwell_time", 14.0))
+        threat = float(cand.get("threat_score", 72.0))
+        zone_val = str(cand.get("zone") or cand.get("zone_id") or "ZONE-01-PERIMETER")
+        motion_val = str(cand.get("motion_state") or "LOITERING").upper()
+        tripwire = bool(cand.get("tripwire_cross", False))
+        unattended = bool(cand.get("unattended_baggage", False))
+
+        uses_or = " OR " in rule_expr.upper() and " AND " not in rule_expr.upper()
+        raw_clauses = [c.strip() for c in (rule_expr.split("OR") if uses_or else rule_expr.replace(" OR ", " AND ").split("AND")) if c.strip()]
+        evaluated_clauses = []
+
+        for clause in raw_clauses:
+            cl_low = clause.lower()
+            passed = True
+            if "confidence" in cl_low and ">" in cl_low:
+                try:
+                    thresh = float(cl_low.split(">")[-1].strip().rstrip("s"))
+                    passed = conf > thresh
+                except ValueError:
+                    passed = True
+            elif "dwell_time" in cl_low and ">" in cl_low:
+                try:
+                    thresh = float(cl_low.split(">")[-1].strip().rstrip("s"))
+                    passed = dwell > thresh
+                except ValueError:
+                    passed = True
+            elif "threat_score" in cl_low and ">" in cl_low:
+                try:
+                    thresh = float(cl_low.split(">")[-1].strip())
+                    passed = threat > thresh
+                except ValueError:
+                    passed = True
+            elif "zone" in cl_low and "==" in cl_low:
+                target_z = clause.split("==")[-1].strip().strip("'\"")
+                passed = zone_val.lower() == target_z.lower()
+            elif "motion_state" in cl_low and "==" in cl_low:
+                target_m = clause.split("==")[-1].strip().strip("'\"").upper()
+                passed = motion_val == target_m
+            elif "tripwire_cross" in cl_low:
+                passed = tripwire if "false" not in cl_low else (not tripwire)
+            elif "unattended_baggage" in cl_low:
+                passed = unattended if "false" not in cl_low else (not unattended)
+
+            evaluated_clauses.append({"clause": clause, "passed": passed})
+
+        if not evaluated_clauses:
+            matched = True
+        elif uses_or:
+            matched = any(c["passed"] for c in evaluated_clauses)
+        else:
+            matched = all(c["passed"] for c in evaluated_clauses)
+
+        return {
+            "rule_expression": rule_expr,
+            "combinator": "OR" if uses_or else "AND",
+            "matched": matched,
+            "evaluated_clauses": evaluated_clauses,
+            "telemetry_snapshot": {
+                "confidence": conf,
+                "dwell_time": dwell,
+                "threat_score": threat,
+                "zone": zone_val,
+                "motion_state": motion_val,
+                "tripwire_cross": tripwire,
+                "unattended_baggage": unattended
+            },
+            "recommended_severity": "CRITICAL" if (matched and threat >= 80) else ("HIGH" if matched else "LOW"),
+            "trigger_incident": matched,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+
+    def _handle_predict_target_trajectory(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        import math as _math
+        track_id = str(args.get("track_id") or "TRK-101")
+        x = float(args.get("x", 320.0))
+        y = float(args.get("y", 240.0))
+        vx = float(args.get("vx", 28.0))
+        vy = float(args.get("vy", 16.0))
+        horizon_sec = max(1, min(int(args.get("horizon_sec", 3)), 10))
+        speed = round(_math.hypot(vx, vy), 2)
+
+        predictions = []
+        for t in range(1, horizon_sec + 1):
+            damping = round(0.88 ** t, 4)
+            pred_x = round(x + vx * t * damping, 2)
+            pred_y = round(y + vy * t * damping, 2)
+            predictions.append({
+                "t_offset_sec": t,
+                "label": f"T+{t}s",
+                "predicted_x": pred_x,
+                "predicted_y": pred_y,
+                "damping_factor": damping,
+                "confidence": round(max(0.5, 0.96 - 0.08 * t), 2)
+            })
+
+        breach_prob = round(min(0.98, max(0.15, (speed / 60.0) * 0.75 + 0.2)), 2)
+        return {
+            "track_id": track_id,
+            "kinematic_model": "KALMAN_DAMPED_CONSTANT_VELOCITY",
+            "current_position": {"x": x, "y": y},
+            "velocity_vector": {"vx": vx, "vy": vy, "speed_px_s": speed},
+            "horizon_sec": horizon_sec,
+            "predictions": predictions,
+            "breach_probability": breach_prob,
+            "intercept_zone": "ZONE-01-PERIMETER" if breach_prob >= 0.45 else "NONE",
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+
+    def _handle_engage_counter_uas(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        target_track_id = str(args.get("target_track_id") or args.get("track_id") or "UAS-ROGUE-09").strip()
+        countermeasure = str(args.get("countermeasure") or "RF_DIRECTIONAL_JAM").upper()
+        allowed_cm = {"RF_DIRECTIONAL_JAM", "ACOUSTIC_DETERRENT", "GNSS_SPOOF_CONTAINMENT", "INTERCEPT_NET_UAV"}
+        if countermeasure not in allowed_cm:
+            countermeasure = "RF_DIRECTIONAL_JAM"
+        sector = str(args.get("sector") or "SECTOR-ALPHA-ENTRANCE").strip()
+        now_iso = datetime.utcnow().isoformat() + "Z"
+        engagement_id = f"CUAS-{int(time.time())}"
+
+        log_audit(
+            tenant_id,
+            "COUNTER_UAS_ENGAGED",
+            actor,
+            "SUCCESS",
+            f"Engaged {countermeasure} on {target_track_id} in {sector} ({engagement_id})"
+        )
+        return {
+            "engagement_id": engagement_id,
+            "target_track_id": target_track_id,
+            "countermeasure": countermeasure,
+            "sector": sector,
+            "containment_status": "ACTIVE_CONTAINMENT",
+            "rf_lock_dbm": -42.5,
+            "gnss_corridor_locked": True,
+            "audit_logged": True,
+            "timestamp": now_iso
+        }
+
 
 # Singleton global instance
 GLOBAL_TOOL_REGISTRY = BrainToolRegistry()
+

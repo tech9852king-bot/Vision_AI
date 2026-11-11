@@ -1,25 +1,31 @@
-"""System & Health Router for VantaVisionAI Funding Prototype"""
+"""System, C4ISR Digital Twin, Multi-UAV Swarm & Edge Benchmark Router for VantaVisionAI"""
 from fastapi import APIRouter, Depends
 from datetime import datetime
+from typing import Optional, Dict, Any
 import platform
+import time
 import os
 
-from backend.app.database import get_connection
+from backend.app.database import get_connection, verify_audit_chain
 from backend.app.routers.brain import get_tenant_id
 from backend.app.core_brain import ALLOWLISTED_COMMANDS
+from backend.app.brain_tools import GLOBAL_TOOL_REGISTRY
+from backend.app.brain_service import BrainService
 
 router = APIRouter(tags=["system"])
 
 START_TIME = datetime.utcnow()
+
 
 @router.get("/health")
 async def health_check():
     return {
         "status": "ok",
         "app": "VantaVisionAI Funding Prototype",
-        "version": "1.0.0",
+        "version": "8.0.0-SINGULARITY",
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
+
 
 @router.get("/ready")
 async def readiness_check():
@@ -40,6 +46,7 @@ async def readiness_check():
         "browser_scanner": "TensorFlow.js COCO-SSD MobileNet V2",
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
+
 
 CAMERA_STREAMS = [
     {
@@ -104,13 +111,14 @@ CAMERA_STREAMS = [
     }
 ]
 
+
 @router.get("/api/v1/system")
 async def get_system_info(tenant_id: str = Depends(get_tenant_id)):
     uptime_seconds = int((datetime.utcnow() - START_TIME).total_seconds())
     online_count = sum(1 for s in CAMERA_STREAMS if s["status"] == "ONLINE")
     return {
         "app_name": "VantaVisionAI Funding Prototype",
-        "version": "1.0.0",
+        "version": "8.0.0-SINGULARITY",
         "tenant_id": tenant_id,
         "uptime_seconds": uptime_seconds,
         "environment": os.environ.get("ENVIRONMENT", "prototype"),
@@ -131,9 +139,11 @@ async def get_system_info(tenant_id: str = Depends(get_tenant_id)):
         "brain_subsystem": {
             "mode": "CONTROLLED_COMMAND_INTERFACE",
             "status": "OPERATIONAL",
-            "allowlist_count": len(ALLOWLISTED_COMMANDS)
+            "allowlist_count": len(ALLOWLISTED_COMMANDS),
+            "tools_count": len(GLOBAL_TOOL_REGISTRY.list_tools())
         }
     }
+
 
 @router.get("/api/v1/system/cameras")
 async def get_camera_streams(tenant_id: str = Depends(get_tenant_id)):
@@ -150,6 +160,7 @@ async def get_camera_streams(tenant_id: str = Depends(get_tenant_id)):
         "streams": CAMERA_STREAMS
     }
 
+
 @router.post("/api/v1/system/cameras/{stream_id}/ping")
 async def ping_camera_stream(stream_id: str, tenant_id: str = Depends(get_tenant_id)):
     stream = next((s for s in CAMERA_STREAMS if s["id"] == stream_id), None)
@@ -164,6 +175,7 @@ async def ping_camera_stream(stream_id: str, tenant_id: str = Depends(get_tenant
         "ping_success": stream["status"] == "ONLINE",
         "last_ping": stream["last_ping"]
     }
+
 
 @router.post("/api/v1/system/cameras/{stream_id}/toggle")
 async def toggle_camera_stream(stream_id: str, tenant_id: str = Depends(get_tenant_id)):
@@ -182,6 +194,110 @@ async def toggle_camera_stream(stream_id: str, tenant_id: str = Depends(get_tena
         "latency_ms": stream["latency_ms"],
         "timestamp": stream["last_ping"]
     }
+
+
+@router.get("/api/v1/system/twin")
+async def get_system_digital_twin(
+    sector_id: Optional[str] = None,
+    tenant_id: str = Depends(get_tenant_id)
+):
+    res = GLOBAL_TOOL_REGISTRY.execute_tool(
+        "query_digital_twin_state",
+        {"sector_id": sector_id} if sector_id else {},
+        tenant_id=tenant_id
+    )
+    data = res.get("data") or {}
+    return {
+        "status": "ONLINE",
+        **data
+    }
+
+
+@router.get("/api/v1/system/swarm")
+async def get_system_drone_swarm(tenant_id: str = Depends(get_tenant_id)):
+    res = GLOBAL_TOOL_REGISTRY.execute_tool(
+        "coordinate_drone_swarm",
+        {"operation": "STATUS"},
+        tenant_id=tenant_id
+    )
+    data = res.get("data") or {}
+    return {
+        "status": "OPERATIONAL",
+        **data
+    }
+
+
+@router.post("/api/v1/system/swarm/handoff")
+async def trigger_swarm_handoff(
+    body: Optional[Dict[str, Any]] = None,
+    tenant_id: str = Depends(get_tenant_id)
+):
+    payload = body or {}
+    res = GLOBAL_TOOL_REGISTRY.execute_tool(
+        "coordinate_drone_swarm",
+        {
+            "operation": "HANDOFF",
+            "primary_drone_id": payload.get("primary_drone_id") or "UAV-OMEGA-706",
+            "relief_drone_id": payload.get("relief_drone_id") or "UAV-SIGMA-705",
+            "sector": payload.get("sector") or "SECTOR-ALPHA-ENTRANCE"
+        },
+        tenant_id=tenant_id
+    )
+    data = res.get("data") or {}
+    return {
+        "status": "HANDOFF_EXECUTED",
+        **data
+    }
+
+
+@router.get("/api/v1/system/edge-profile")
+async def get_edge_hardware_profile(tenant_id: str = Depends(get_tenant_id)):
+    return {
+        "status": "OPTIMIZED",
+        "tenant_id": tenant_id,
+        "profile_name": "LOW_SPEC_LAPTOP_GUARD_V8",
+        "max_inference_resolution": "640x480",
+        "max_dimension_px": 640,
+        "adaptive_throttle_ms": {"min": 80, "max": 150, "target_fps": 11.5},
+        "background_tab_pause": True,
+        "memory_budget_mb": {"nlp_kinematics_overhead_mb": 0.68, "max_allowed_mb": 1.0},
+        "detector_model": "TensorFlow.js COCO-SSD MobileNet V2",
+        "reid_feature_dim": 14,
+        "kalman_horizon_sec": 3,
+        "forensic_buffer_max_frames": 120,
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
+
+
+@router.get("/api/v1/system/benchmark")
+async def run_system_benchmark(tenant_id: str = Depends(get_tenant_id)):
+    t0 = time.perf_counter()
+    conn = get_connection()
+    conn.cursor().execute("SELECT COUNT(*) FROM events WHERE tenant_id = ?", (tenant_id,))
+    conn.close()
+    sqlite_ms = max(0.05, round((time.perf_counter() - t0) * 1000, 3))
+
+    t1 = time.perf_counter()
+    BrainService.process_command("status", {}, tenant_id=tenant_id)
+    brain_ms = max(0.1, round((time.perf_counter() - t1) * 1000, 3))
+
+    t2 = time.perf_counter()
+    chain = verify_audit_chain(tenant_id=tenant_id, limit=25)
+    audit_ms = max(0.05, round((time.perf_counter() - t2) * 1000, 3))
+
+    total_ms = round(sqlite_ms + brain_ms + audit_ms, 3)
+    return {
+        "status": "COMPLETED",
+        "tenant_id": tenant_id,
+        "sqlite_query_ms": sqlite_ms,
+        "brain_9layer_ms": brain_ms,
+        "audit_hash_verify_ms": audit_ms,
+        "total_benchmark_ms": total_ms,
+        "audit_chain_verified": chain["chain_verified"],
+        "grade": "A+_MIL_SPEC" if total_ms < 250 else "A_STANDARD",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
+
 
 @router.get("/api/v1/summary")
 async def get_summary(tenant_id: str = Depends(get_tenant_id)):

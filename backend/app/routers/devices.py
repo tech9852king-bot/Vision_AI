@@ -25,6 +25,7 @@ router = APIRouter(tags=["devices-zones-auth"])
 
 
 @router.get("/api/v1/auth/session")
+@router.get("/api/v1/auth/me")
 async def get_session_info(
     authorization: Optional[str] = Header(None),
     x_tenant_id: Optional[str] = Header(None)
@@ -41,11 +42,14 @@ async def get_session_info(
     return {
         "status": "ACTIVE",
         "authenticated": ctx["authenticated"],
+        "verified_jwt": ctx["verified_jwt"],
         "auth_mode": ctx["auth_mode"],
+        "actor_id": ctx["actor_id"],
         "subject": ctx["subject"],
         "tenant_id": ctx["tenant_id"],
         "role": ctx["role"],
         "device_id": ctx.get("device_id"),
+        "scopes": ctx.get("scopes", []),
         "token": token,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
@@ -57,7 +61,7 @@ async def issue_auth_token(
     tenant_id: str = Depends(get_tenant_id)
 ):
     payload = body or {}
-    subject = str(payload.get("subject") or "operator@vantavision.ai").strip()
+    subject = str(payload.get("subject") or payload.get("sub") or "operator@vantavision.ai").strip()
     role = str(payload.get("role") or "ADMIN").upper()
     device_id = payload.get("device_id")
     token = create_jwt_token(
@@ -76,6 +80,27 @@ async def issue_auth_token(
         "tenant_id": tenant_id,
         "role": role,
         "device_id": device_id,
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
+
+
+@router.post("/api/v1/auth/revoke")
+async def revoke_auth_token_endpoint(
+    body: Optional[Dict[str, Any]] = None,
+    authorization: Optional[str] = Header(None),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    payload = body or {}
+    raw_token = payload.get("token")
+    if not raw_token and authorization and authorization.lower().startswith("bearer "):
+        raw_token = authorization.split(" ", 1)[1].strip()
+    if not raw_token:
+        raise HTTPException(status_code=400, detail="Token is required for revocation.")
+    revoke_jwt_token(raw_token)
+    log_audit(tenant_id, "AUTH_JWT_REVOKED", "operator", "SUCCESS", "Revoked JWT token")
+    return {
+        "status": "REVOKED",
+        "tenant_id": tenant_id,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
