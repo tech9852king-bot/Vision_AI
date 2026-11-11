@@ -441,6 +441,176 @@ class BrainToolRegistry:
             timeout_seconds=3.0
         ))
 
+        # 16. get_device_inventory
+        self.register(BrainTool(
+            name="get_device_inventory",
+            description="List all registered multi-device camera nodes, laptops, phones, and central command units",
+            category=ToolCategory.READ_ONLY,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "description": "Optional status filter: ONLINE, OFFLINE, SIMULATED, REVOKED"}
+                },
+                "required": []
+            },
+            handler=self._handle_get_device_inventory
+        ))
+
+        # 17. get_device_status
+        self.register(BrainTool(
+            name="get_device_status",
+            description="Inspect detailed health, heartbeat, battery, latency, and stream mode for a specific device",
+            category=ToolCategory.DIAGNOSTIC,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "device_id": {"type": "string", "description": "Target device ID (e.g., DEV-CENTRAL-CMD)"}
+                },
+                "required": ["device_id"]
+            },
+            handler=self._handle_get_device_status
+        ))
+
+        # 18. correlate_cross_camera_events
+        self.register(BrainTool(
+            name="correlate_cross_camera_events",
+            description="Correlate object detections across multiple cameras, devices, and zones using non-biometric spatiotemporal features",
+            category=ToolCategory.DIAGNOSTIC,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "class_name": {"type": "string", "description": "Optional object class filter (e.g., person, car)"}
+                },
+                "required": []
+            },
+            handler=self._handle_correlate_cross_camera_events
+        ))
+
+        # 19. get_zone_intelligence
+        self.register(BrainTool(
+            name="get_zone_intelligence",
+            description="Retrieve configured polygon security zones, occupancy thresholds, loitering limits, and zone activity counts",
+            category=ToolCategory.READ_ONLY,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "camera_id": {"type": "string", "description": "Optional camera ID filter"}
+                },
+                "required": []
+            },
+            handler=self._handle_get_zone_intelligence
+        ))
+
+        # 20. generate_operational_report
+        self.register(BrainTool(
+            name="generate_operational_report",
+            description="Generate a comprehensive executive security report combining devices, zones, events, incidents, and policy posture",
+            category=ToolCategory.READ_ONLY,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {},
+                "required": []
+            },
+            handler=self._handle_generate_operational_report
+        ))
+
+        # 21. manage_zone_geometry
+        self.register(BrainTool(
+            name="manage_zone_geometry",
+            description="Modify, calibrate, or delete spatial polygon vertices and alert boundaries",
+            category=ToolCategory.MUTATING,
+            permission=ToolPermission.OPERATOR,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "action": {"type": "string", "description": "Action: CREATE, UPDATE, or DELETE"},
+                    "zone_id": {"type": "string", "description": "Identifier of the zone"},
+                    "name": {"type": "string", "description": "Zone name (for CREATE/UPDATE)"},
+                    "camera_id": {"type": "string", "description": "Associated camera stream ID"},
+                    "polygon": {"type": "array", "description": "Array of [x, y] normalized vertices"}
+                },
+                "required": ["action", "zone_id"]
+            },
+            handler=self._handle_manage_zone_geometry,
+            is_destructive=False
+        ))
+
+        # 22. initiate_webrtc_stream
+        self.register(BrainTool(
+            name="initiate_webrtc_stream",
+            description="Request WebRTC peer stream handshake or toggle metadata-only mode for a camera device",
+            category=ToolCategory.OPERATIONAL,
+            permission=ToolPermission.OPERATOR,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "device_id": {"type": "string", "description": "Target camera node device ID"},
+                    "stream_mode": {"type": "string", "description": "Stream mode: LIVE_WEBRTC or METADATA_ONLY"}
+                },
+                "required": ["device_id"]
+            },
+            handler=self._handle_initiate_webrtc_stream,
+            is_destructive=False
+        ))
+
+        # 23. replay_forensic_timeline
+        self.register(BrainTool(
+            name="replay_forensic_timeline",
+            description="Extract time-synchronized detection history, track paths, and alerts for forensic playback",
+            category=ToolCategory.READ_ONLY,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "time_window_sec": {"type": "integer", "description": "Historical duration in seconds (default 300)"},
+                    "camera_id": {"type": "string", "description": "Optional camera filter"},
+                    "limit": {"type": "integer", "description": "Maximum records to return (default 50)"}
+                },
+                "required": []
+            },
+            handler=self._handle_replay_forensic_timeline
+        ))
+
+        # 24. synthesize_spatial_twin
+        self.register(BrainTool(
+            name="synthesize_spatial_twin",
+            description="Generate unified 2D spatial coordinate layout of all cameras, polygon zones, and active object centroids",
+            category=ToolCategory.READ_ONLY,
+            permission=ToolPermission.READ,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "include_zones": {"type": "boolean", "description": "Include polygon zones in model"},
+                    "include_offline": {"type": "boolean", "description": "Include offline camera nodes"}
+                },
+                "required": []
+            },
+            handler=self._handle_synthesize_spatial_twin
+        ))
+
+        # 25. revoke_device_credentials
+        self.register(BrainTool(
+            name="revoke_device_credentials",
+            description="Immediately revoke a device's cryptographic credentials and blacklist its JWT session",
+            category=ToolCategory.MUTATING,
+            permission=ToolPermission.ADMIN,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "device_id": {"type": "string", "description": "Device identifier to revoke"},
+                    "reason": {"type": "string", "description": "Security revocation justification"}
+                },
+                "required": ["device_id"]
+            },
+            handler=self._handle_revoke_device_credentials,
+            is_destructive=True
+        ))
+
     # --- Tool Handlers ---
 
     def _handle_get_system_status(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
@@ -829,6 +999,348 @@ class BrainToolRegistry:
             "stream_url": f"webrtc://drone-relay.vanta.internal/{drone_id}/live",
             "timestamp": now_iso
         }
+
+    def _handle_get_device_inventory(self, args: Dict[str, Any], tenant_id: str, actor: str) -> List[Dict[str, Any]]:
+        import json as _json
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            query = """SELECT id, tenant_id, name, device_type, role, camera_id, facing_mode, status,
+                              capabilities, stream_mode, battery_pct, latency_ms, last_heartbeat, paired_via, revoked
+                       FROM devices WHERE tenant_id = ?"""
+            params: List[Any] = [tenant_id]
+            if args.get("status"):
+                query += " AND status = ?"
+                params.append(str(args["status"]).upper())
+            query += " ORDER BY created_at ASC"
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            out = []
+            for r in rows:
+                caps = []
+                if r["capabilities"]:
+                    try:
+                        caps = _json.loads(r["capabilities"])
+                    except Exception:
+                        caps = []
+                out.append({
+                    "id": r["id"],
+                    "tenant_id": r["tenant_id"],
+                    "name": r["name"],
+                    "device_type": r["device_type"],
+                    "role": r["role"],
+                    "camera_id": r["camera_id"],
+                    "facing_mode": r["facing_mode"],
+                    "status": "REVOKED" if r["revoked"] else r["status"],
+                    "capabilities": caps,
+                    "stream_mode": r["stream_mode"],
+                    "battery_pct": r["battery_pct"],
+                    "latency_ms": r["latency_ms"],
+                    "last_heartbeat": r["last_heartbeat"],
+                    "paired_via": r["paired_via"]
+                })
+            return out
+        finally:
+            conn.close()
+
+    def _handle_get_device_status(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        import json as _json
+        device_id = str(args.get("device_id", "")).strip()
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM devices WHERE id = ? AND tenant_id = ?",
+                (device_id, tenant_id)
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise ValueError(f"Device '{device_id}' not found under tenant '{tenant_id}'")
+            caps = []
+            if row["capabilities"]:
+                try:
+                    caps = _json.loads(row["capabilities"])
+                except Exception:
+                    caps = []
+            cursor.execute("SELECT COUNT(*) as c FROM events WHERE tenant_id = ? AND device_id = ?", (tenant_id, device_id))
+            ev_cnt = cursor.fetchone()["c"]
+            return {
+                "id": row["id"],
+                "tenant_id": row["tenant_id"],
+                "name": row["name"],
+                "device_type": row["device_type"],
+                "role": row["role"],
+                "camera_id": row["camera_id"],
+                "status": "REVOKED" if row["revoked"] else row["status"],
+                "capabilities": caps,
+                "stream_mode": row["stream_mode"],
+                "battery_pct": row["battery_pct"],
+                "latency_ms": row["latency_ms"],
+                "last_heartbeat": row["last_heartbeat"],
+                "events_ingested": ev_cnt
+            }
+        finally:
+            conn.close()
+
+    def _handle_correlate_cross_camera_events(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            query = "SELECT id, timestamp, camera_id, class_name, confidence, device_id, track_id, zone_id FROM events WHERE tenant_id = ?"
+            params: List[Any] = [tenant_id]
+            if args.get("class_name"):
+                query += " AND class_name = ?"
+                params.append(str(args["class_name"]).lower())
+            query += " ORDER BY timestamp DESC LIMIT 50"
+            cursor.execute(query, params)
+            events = [dict(r) for r in cursor.fetchall()]
+
+            by_class: Dict[str, List[Dict[str, Any]]] = {}
+            for ev in events:
+                cls = ev.get("class_name") or "object"
+                by_class.setdefault(cls, []).append(ev)
+
+            correlations = []
+            for cls, cls_events in by_class.items():
+                cameras = list({e["camera_id"] for e in cls_events if e.get("camera_id")})
+                devices = list({e.get("device_id") or "DEV-CENTRAL-CMD" for e in cls_events})
+                correlations.append({
+                    "correlation_id": f"CORR-{cls.upper()}-{len(cls_events)}",
+                    "object_class": cls,
+                    "cameras_involved": cameras,
+                    "devices_involved": devices,
+                    "event_count": len(cls_events),
+                    "pattern": "MULTI_CAMERA_TRANSIT" if len(cameras) >= 2 else "SINGLE_CAMERA_CLUSTER",
+                    "latest_timestamp": cls_events[0]["timestamp"] if cls_events else None
+                })
+            return {
+                "tenant_id": tenant_id,
+                "total_events_analyzed": len(events),
+                "correlations": correlations,
+                "privacy_mode": "NON_BIOMETRIC_SPATIOTEMPORAL"
+            }
+        finally:
+            conn.close()
+
+    def _handle_get_zone_intelligence(self, args: Dict[str, Any], tenant_id: str, actor: str) -> List[Dict[str, Any]]:
+        import json as _json
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            query = "SELECT * FROM zones WHERE tenant_id = ?"
+            params: List[Any] = [tenant_id]
+            if args.get("camera_id"):
+                query += " AND camera_id = ?"
+                params.append(args["camera_id"])
+            query += " ORDER BY id ASC"
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            out = []
+            for r in rows:
+                poly = []
+                try:
+                    poly = _json.loads(r["polygon"])
+                except Exception:
+                    poly = []
+                out.append({
+                    "id": r["id"],
+                    "name": r["name"],
+                    "camera_id": r["camera_id"],
+                    "zone_type": r["zone_type"],
+                    "severity": r["severity"],
+                    "polygon": poly,
+                    "max_occupancy": r["max_occupancy"],
+                    "max_dwell_sec": r["max_dwell_sec"],
+                    "enabled": bool(r["enabled"])
+                })
+            return out
+        finally:
+            conn.close()
+
+    def _handle_generate_operational_report(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) as c FROM devices WHERE tenant_id = ? AND revoked = 0", (tenant_id,))
+            dev_cnt = cursor.fetchone()["c"]
+            cursor.execute("SELECT COUNT(*) as c FROM zones WHERE tenant_id = ? AND enabled = 1", (tenant_id,))
+            zone_cnt = cursor.fetchone()["c"]
+            cursor.execute("SELECT COUNT(*) as c FROM events WHERE tenant_id = ?", (tenant_id,))
+            ev_cnt = cursor.fetchone()["c"]
+            cursor.execute("SELECT COUNT(*) as c FROM incidents WHERE tenant_id = ? AND status = 'OPEN'", (tenant_id,))
+            open_inc = cursor.fetchone()["c"]
+            cursor.execute("SELECT COUNT(*) as c FROM policies WHERE tenant_id = ? AND enabled = 1", (tenant_id,))
+            pol_cnt = cursor.fetchone()["c"]
+            return {
+                "report_id": f"RPT-{int(time.time())}",
+                "tenant_id": tenant_id,
+                "generated_at": datetime.utcnow().isoformat() + "Z",
+                "active_devices": dev_cnt,
+                "active_polygon_zones": zone_cnt,
+                "total_events": ev_cnt,
+                "open_incidents": open_inc,
+                "active_policies": pol_cnt,
+                "posture": "ELEVATED_ALERT" if open_inc > 0 else "NOMINAL_SECURE"
+            }
+        finally:
+            conn.close()
+
+    def _handle_manage_zone_geometry(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        import json as _json
+        action = str(args.get("action", "UPDATE")).upper()
+        zone_id = str(args.get("zone_id", "")).strip()
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            if action == "DELETE":
+                cursor.execute("DELETE FROM zones WHERE id = ? AND tenant_id = ?", (zone_id, tenant_id))
+                conn.commit()
+                log_audit(tenant_id, "ZONE_GEOMETRY_DELETED", actor, "SUCCESS", f"Deleted zone {zone_id}")
+                return {"status": "DELETED", "zone_id": zone_id}
+            elif action == "CREATE":
+                name = str(args.get("name") or f"Zone {zone_id}")
+                camera_id = str(args.get("camera_id") or "CAM-01-ENTRANCE")
+                poly = args.get("polygon") or [[0.1, 0.1], [0.9, 0.1], [0.9, 0.9], [0.1, 0.9]]
+                now_iso = datetime.utcnow().isoformat() + "Z"
+                cursor.execute(
+                    """INSERT INTO zones (id, tenant_id, name, camera_id, zone_type, severity, polygon, color, max_occupancy, max_dwell_sec, enabled, created_at)
+                       VALUES (?, ?, ?, ?, 'RESTRICTED', 'HIGH', ?, '#f43f5e', 3, 30, 1, ?)""",
+                    (zone_id, tenant_id, name, camera_id, _json.dumps(poly), now_iso)
+                )
+                conn.commit()
+                log_audit(tenant_id, "ZONE_GEOMETRY_CREATED", actor, "SUCCESS", f"Created zone {zone_id}")
+                return {"status": "CREATED", "zone_id": zone_id, "polygon": poly}
+            else:
+                poly = args.get("polygon")
+                if poly:
+                    cursor.execute("UPDATE zones SET polygon = ? WHERE id = ? AND tenant_id = ?", (_json.dumps(poly), zone_id, tenant_id))
+                    conn.commit()
+                log_audit(tenant_id, "ZONE_GEOMETRY_UPDATED", actor, "SUCCESS", f"Updated geometry for {zone_id}")
+                return {"status": "UPDATED", "zone_id": zone_id, "polygon": poly}
+        finally:
+            conn.close()
+
+    def _handle_initiate_webrtc_stream(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        device_id = str(args.get("device_id", "")).strip()
+        stream_mode = str(args.get("stream_mode", "LIVE_WEBRTC")).upper()
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, status, camera_id FROM devices WHERE id = ? AND tenant_id = ?", (device_id, tenant_id))
+            dev = cursor.fetchone()
+            if not dev:
+                raise ValueError(f"Device '{device_id}' not found under tenant '{tenant_id}'")
+            cursor.execute("UPDATE devices SET stream_mode = ? WHERE id = ? AND tenant_id = ?", (stream_mode, device_id, tenant_id))
+            conn.commit()
+            log_audit(tenant_id, "WEBRTC_STREAM_INITIATED", actor, "SUCCESS", f"Device {device_id} switched to {stream_mode}")
+            return {
+                "device_id": device_id,
+                "name": dev["name"],
+                "camera_id": dev["camera_id"],
+                "stream_mode": stream_mode,
+                "signaling_channel": f"wss://vanta.internal/ws?device_id={device_id}",
+                "ice_servers": [{"urls": "stun:stun.l.google.com:19302"}],
+                "status": "SIGNALING_READY"
+            }
+        finally:
+            conn.close()
+
+    def _handle_replay_forensic_timeline(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        limit = min(int(args.get("limit", 50)), 200)
+        camera_id = args.get("camera_id")
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            query = "SELECT id, timestamp, camera_id, class_name, confidence, bbox, track_id, zone_id FROM events WHERE tenant_id = ?"
+            params: List[Any] = [tenant_id]
+            if camera_id:
+                query += " AND camera_id = ?"
+                params.append(camera_id)
+            query += " ORDER BY timestamp DESC LIMIT ?"
+            params.append(limit)
+            cursor.execute(query, params)
+            events = [dict(r) for r in cursor.fetchall()]
+            return {
+                "tenant_id": tenant_id,
+                "timeline_count": len(events),
+                "camera_filter": camera_id or "ALL",
+                "events": events,
+                "scrubbing_mode": "CIRCULAR_BUFFER_SYNCHRONIZED"
+            }
+        finally:
+            conn.close()
+
+    def _handle_synthesize_spatial_twin(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        import json as _json
+        include_zones = bool(args.get("include_zones", True))
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, device_type, role, camera_id, status, stream_mode FROM devices WHERE tenant_id = ? AND revoked = 0", (tenant_id,))
+            devices = [dict(r) for r in cursor.fetchall()]
+
+            zones = []
+            if include_zones:
+                cursor.execute("SELECT id, name, camera_id, zone_type, severity, polygon, color FROM zones WHERE tenant_id = ? AND enabled = 1", (tenant_id,))
+                for r in cursor.fetchall():
+                    try:
+                        poly = _json.loads(r["polygon"])
+                    except Exception:
+                        poly = []
+                    zones.append({
+                        "id": r["id"],
+                        "name": r["name"],
+                        "camera_id": r["camera_id"],
+                        "zone_type": r["zone_type"],
+                        "severity": r["severity"],
+                        "polygon": poly,
+                        "color": r["color"]
+                    })
+
+            return {
+                "tenant_id": tenant_id,
+                "twin_version": "2.0-NEXUS",
+                "canvas_dimension": {"width": 1280, "height": 720},
+                "nodes": [
+                    {
+                        "node_id": d["id"],
+                        "type": "CAMERA_NODE",
+                        "label": d["name"],
+                        "camera_id": d["camera_id"],
+                        "status": d["status"],
+                        "stream_mode": d["stream_mode"],
+                        "coordinates": {"x": 200 + (i * 280) % 800, "y": 180 + (i * 140) % 400}
+                    }
+                    for i, d in enumerate(devices)
+                ],
+                "zones": zones,
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            }
+        finally:
+            conn.close()
+
+    def _handle_revoke_device_credentials(self, args: Dict[str, Any], tenant_id: str, actor: str) -> Dict[str, Any]:
+        device_id = str(args.get("device_id", "")).strip()
+        reason = str(args.get("reason", "Revoked by security administrator")).strip()
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM devices WHERE id = ? AND tenant_id = ?", (device_id, tenant_id))
+            if not cursor.fetchone():
+                raise ValueError(f"Device '{device_id}' not found under tenant '{tenant_id}'")
+            now_iso = datetime.utcnow().isoformat() + "Z"
+            cursor.execute("UPDATE devices SET revoked = 1, status = 'REVOKED', last_heartbeat = ? WHERE id = ? AND tenant_id = ?", (now_iso, device_id, tenant_id))
+            conn.commit()
+            log_audit(tenant_id, "DEVICE_CREDENTIALS_REVOKED", actor, "SUCCESS", f"Revoked credentials for {device_id}: {reason}")
+            return {
+                "device_id": device_id,
+                "revoked": True,
+                "status": "REVOKED",
+                "reason": reason,
+                "timestamp": now_iso
+            }
+        finally:
+            conn.close()
 
 
 # Singleton global instance

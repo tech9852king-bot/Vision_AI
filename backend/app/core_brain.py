@@ -17,7 +17,10 @@ ALLOWLISTED_COMMANDS: Dict[str, str] = {
     "diagnostics": "View camera pipeline diagnostics and runtime telemetry",
     "audit": "Inspect latest security actions and audit trails",
     "troubleshoot": "Step-by-step diagnostic guidance for camera, scanner, and policy issues",
-    "tools": "List approved Brain tools and execution schemas"
+    "tools": "List approved Brain tools and execution schemas",
+    "devices": "Inspect registered multi-device camera nodes, pairing status, and health",
+    "zones": "Inspect polygon security zones, occupancy limits, and loitering rules",
+    "correlations": "Run cross-camera spatiotemporal object correlation across active nodes"
 }
 
 # Mapping of commands to underlying approved tools
@@ -30,7 +33,10 @@ COMMAND_TOOL_MAPPING: Dict[str, str] = {
     "events": "list_events",
     "diagnostics": "get_pipeline_diagnostics",
     "audit": "get_audit_trail",
-    "troubleshoot": "run_troubleshooter"
+    "troubleshoot": "run_troubleshooter",
+    "devices": "get_device_inventory",
+    "zones": "get_zone_intelligence",
+    "correlations": "correlate_cross_camera_events"
 }
 
 def validate_brain_command(cmd_raw: str) -> Tuple[bool, str]:

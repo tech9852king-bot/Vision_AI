@@ -9,6 +9,10 @@
   <meta property="og:description" content="AI-powered visual monitoring, computer vision threat detection, 7-layer guarded brain orchestration, and ALEANA voice assistant.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/style.css">
   <script>
     (function() {
@@ -63,6 +67,35 @@
               <rect x="2" y="6" width="14" height="12" rx="2"/>
             </svg>
             <span>Live Scanner</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="devices" role="tab" title="Multi-Device Camera Fleet & QR Pairing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+            <span>Multi-Device Nodes</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="zones" role="tab" title="Polygon Zone Intelligence & Cross-Camera Correlation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/>
+            </svg>
+            <span>Zones &amp; Correlation</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="digital-twin" role="tab" title="Digital Twin Spatial Map & 2D Tactical HUD">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+            </svg>
+            <span>Digital Twin</span>
+            <span class="nav-badge mono" style="background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid rgba(0,229,255,0.3);">2D/3D</span>
+          </button>
+
+          <button class="nav-tab nav-item" data-view="forensic-replay" role="tab" title="Forensic Time-Machine Event Replay & Evidence Scrubbing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>Forensic Replay</span>
           </button>
 
           <button class="nav-tab nav-item" data-view="events" role="tab" title="Events & Detections">
@@ -181,11 +214,17 @@
             <kbd class="mono" style="font-size: 0.62rem; background: var(--bg-surface-elevated); padding: 1px 4px; border-radius: 3px; border: 1px solid var(--border-subtle); color: var(--cyan);">⌘K</kbd>
           </button>
 
-          <!-- Tactical Audio Effects Mute Toggle -->
+          <!-- Tactical Audio Effects Mute Toggle (Muted by default to avoid unexpected beeps) -->
           <button class="btn btn-sm mono" id="btn-audio-mute-toggle" title="Toggle Tactical Audio Effects & Synthesizer" style="display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; font-size: 0.72rem;">
-            <svg id="audio-icon-unmuted" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-            <svg id="audio-icon-muted" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--critical)" stroke-width="2" style="display: none;"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            <span id="audio-mute-label">Audio: ON</span>
+            <svg id="audio-icon-unmuted" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <svg id="audio-icon-muted" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--critical)" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <span id="audio-mute-label">Audio: OFF</span>
+          </button>
+
+          <!-- PWA Install App Button -->
+          <button class="btn btn-sm mono" id="btn-pwa-install" title="Install VantaVisionAI Standalone App / Camera Node PWA" style="display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; font-size: 0.72rem; border-color: var(--accent-emerald); color: var(--accent-emerald);">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="pwa-install-label">Install App</span>
           </button>
 
           <!-- Quick Aleana Voice Launcher Shortcut with Live Session State -->
@@ -245,7 +284,14 @@
               <h1 class="page-title">Command Center</h1>
               <div class="page-subtitle">Real-time security overview and system status</div>
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <label for="dashboard-auto-refresh-toggle" class="mono" title="Enable or disable automatic refreshing of KPI metrics and recent events" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.28rem 0.65rem; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.72rem; color: var(--text-muted); cursor: pointer; user-select: none;">
+                <span id="dashboard-auto-refresh-label" style="color: var(--accent-cyan); font-weight: 600;">Auto-Refresh: ON</span>
+                <span class="switch" style="margin: 0;">
+                  <input type="checkbox" id="dashboard-auto-refresh-toggle" checked aria-label="Toggle automatic refreshing of KPI metrics and recent events">
+                  <span class="slider"></span>
+                </span>
+              </label>
               <span class="badge badge-low mono">5/5 SUBSYSTEMS NOMINAL</span>
             </div>
           </div>
@@ -464,6 +510,7 @@
                     <option value="CAM-02-LOBBY">Executive Lobby</option>
                     <option value="WEBCAM">Browser Webcam</option>
                     <option value="TEST_FEED">Simulated Feed</option>
+                    <option value="UPLOAD" id="opt-uploaded-video" style="display: none;">Uploaded Video</option>
                   </select>
                 </div>
                 <div class="live-badge-red mono">
@@ -475,6 +522,33 @@
                 <video id="video-element" playsinline webkit-playsinline muted autoplay></video>
                 <canvas id="canvas-element"></canvas>
                 <div class="scanner-overlay-badge mono" id="scanner-fps-badge">Inference: Idle</div>
+                <div class="scanner-drop-overlay" id="scanner-drop-overlay" style="display: none; position: absolute; inset: 0; background: rgba(5, 11, 22, 0.88); border: 2px dashed #00e5ff; border-radius: 8px; z-index: 50; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+                  <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#00e5ff" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <div class="mono" style="color: #00e5ff; font-weight: bold; margin-top: 10px; font-size: 14px;">DROP VIDEO FILE TO SCAN</div>
+                  <div class="mono" style="color: #94a3b8; font-size: 11px; margin-top: 4px;">Supports MP4, WebM, MOV, MKV, AVI (Max 500MB)</div>
+                </div>
+              </div>
+
+              <!-- Forensic Time-Machine Replay HUD Scrubber -->
+              <div class="forensic-timeline-bar" id="forensic-timeline-bar" style="margin-top: 0.75rem; background: rgba(5,11,22,0.85); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.55rem 0.85rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="mono" style="font-size: 0.72rem; color: #00e5ff; font-weight: bold;">TIME-MACHINE REPLAY:</span>
+                    <span class="badge badge-cyan mono" id="forensic-replay-mode-badge" style="font-size: 0.65rem;">LIVE STREAM</span>
+                    <span class="mono" id="forensic-timestamp-display" style="font-size: 0.7rem; color: var(--text-dim);">T-00:00 (NOW)</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <button type="button" class="btn btn-sm mono" id="btn-replay-step-back" title="Step Back 5s" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">&lt;&lt; 5s</button>
+                    <button type="button" class="btn btn-sm btn-primary mono" id="btn-replay-play-pause" title="Play / Pause Replay" style="padding: 0.2rem 0.65rem; font-size: 0.7rem;">Play</button>
+                    <button type="button" class="btn btn-sm mono" id="btn-replay-step-forward" title="Step Forward 5s" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">5s &gt;&gt;</button>
+                    <button type="button" class="btn btn-sm mono" id="btn-replay-live" title="Return to Live Stream" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; border-color: #10b981; color: #10b981;">LIVE</button>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                  <span class="mono" style="font-size: 0.68rem; color: var(--text-dim);">-5m</span>
+                  <input type="range" id="forensic-timeline-slider" min="0" max="300" value="300" step="1" style="flex: 1; accent-color: #00e5ff; cursor: pointer;">
+                  <span class="mono" style="font-size: 0.68rem; color: #10b981;">Live</span>
+                </div>
               </div>
 
               <!-- Scanner Action Controls -->
@@ -482,10 +556,12 @@
                 <button class="btn btn-primary" id="btn-start-cam">Start Webcam</button>
                 <button class="btn btn-danger" id="btn-stop-cam" disabled>Stop Feed</button>
                 <button class="btn" id="btn-test-feed" style="border-color: var(--accent-cyan); color: var(--accent-cyan);">Test Surveillance Feed</button>
-                <label class="btn" style="cursor: pointer;">
+                <button type="button" class="btn" id="btn-upload-video" style="border-color: var(--accent-cyan); color: var(--accent-cyan); cursor: pointer;" title="Upload MP4, WebM, MOV, MKV, AVI video">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: -2px; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Upload Video
-                  <input type="file" id="video-upload-input" accept="video/mp4,video/webm,video/ogg,video/quicktime" style="display: none;">
-                </label>
+                </button>
+                <input type="file" id="video-upload-input" accept="video/*,.mp4,.webm,.ogg,.mov,.mkv,.avi,.m4v" style="display: none;">
+                <button type="button" class="btn btn-sm mono" id="btn-open-external-cam" style="border-color: var(--cyan); color: var(--cyan);" title="Open app in a new tab to bypass iframe sandbox and connect hardware webcam directly">↗ Open Standalone Tab for Hardware Cam</button>
                 <button class="btn" id="btn-snapshot-detect">Single Frame Scan</button>
                 <button class="btn btn-sm mono" id="btn-toggle-heatmap" style="border-color: #f59e0b; color: #f59e0b;">Heatmap: OFF</button>
                 <button class="btn btn-sm mono" id="btn-capture-snapshot" style="border-color: var(--cyan); color: var(--cyan);">Capture Snapshot</button>
@@ -1346,6 +1422,9 @@
                   <button class="cmd-btn cmd-pill" data-cmd="incidents">incidents</button>
                   <button class="cmd-btn cmd-pill" data-cmd="policies">policies</button>
                   <button class="cmd-btn cmd-pill" data-cmd="cameras">cameras</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="devices" style="border-color: var(--accent-emerald); color: var(--accent-emerald);">devices</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="zones" style="border-color: var(--accent-amber); color: var(--accent-amber);">zones</button>
+                  <button class="cmd-btn cmd-pill" data-cmd="correlations" style="border-color: var(--cyan); color: var(--cyan);">correlations</button>
                   <button class="cmd-btn cmd-pill" data-cmd="events">events</button>
                   <button class="cmd-btn cmd-pill" data-cmd="diagnostics">diagnostics</button>
                   <button class="cmd-btn cmd-pill" data-cmd="audit">audit</button>
@@ -1355,7 +1434,7 @@
                 </div>
               </div>
 
-              <!-- 7-Layer Visualizer Telemetry Bar -->
+              <!-- 9-Layer Visualizer Telemetry Bar -->
               <div class="pipeline-visualizer-bar" id="brain-pipeline-visualizer">
                 <div class="pipeline-step-node" id="node-layer-1" data-layer="1">
                   <span class="node-dot"></span>
@@ -1390,6 +1469,16 @@
                 <div class="pipeline-step-node" id="node-layer-7" data-layer="7">
                   <span class="node-dot"></span>
                   <span>L7: Contract</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-8" data-layer="8">
+                  <span class="node-dot"></span>
+                  <span>L8: Audit Chain</span>
+                </div>
+                <span class="pipeline-connector-line">&rarr;</span>
+                <div class="pipeline-step-node" id="node-layer-9" data-layer="9">
+                  <span class="node-dot"></span>
+                  <span>L9: Safe Fallback</span>
                 </div>
               </div>
 
@@ -1718,6 +1807,372 @@ Simulation runner ready. Click above to test complete detection-to-incident life
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.15rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle); font-size: 0.74rem; color: var(--text-dim);" class="mono">
               <span id="camera-monitor-status-text">Health Monitor: Polling every 8s &bull; Auto-ping: Active</span>
               <span id="camera-monitor-packet-stat">Streams Pinged: 5 &bull; Signal Stability: 100%</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 10: MULTI-DEVICE CAMERA FLEET & QR PAIRING           -->
+        <!-- ========================================================= -->
+        <section id="view-devices" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Multi-Device Camera Fleet &amp; QR Onboarding</h1>
+              <div class="page-subtitle">Central Command &bull; Smartphone &amp; Laptop Camera Node Registration &bull; Single-Use Token Pairing &bull; WebRTC Relay</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <span class="badge badge-emerald mono" id="device-fleet-summary-badge">3 ACTIVE NODES</span>
+              <button class="btn btn-sm btn-primary mono" id="btn-refresh-devices">Refresh Fleet</button>
+            </div>
+          </div>
+
+          <div class="grid-2col" style="margin-bottom: 1.25rem;">
+            <!-- Left Card: Generate Single-Use QR / Pairing Token (Central Command) -->
+            <div class="vanta-card hud-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <span>1. Pair External Phone / Laptop Camera (Central Command)</span>
+                </div>
+                <span class="badge badge-low mono">SINGLE-USE TTL</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 0.85rem;">
+                Generate a short-lived 6-character pairing code and QR matrix to onboard a mobile phone, tablet, or secondary laptop as an authenticated edge camera node.
+              </p>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.85rem;">
+                <select class="vanta-select mono" id="pairing-role-select" style="font-size: 0.78rem;">
+                  <option value="mobile_camera">Mobile Phone Camera Node</option>
+                  <option value="edge_camera">Laptop / Edge AI Camera Node</option>
+                  <option value="viewer">Read-Only Monitoring Tablet</option>
+                </select>
+                <button class="btn btn-primary mono" id="btn-generate-pairing-code" style="font-size: 0.78rem;">
+                  Generate QR &amp; Pairing Code
+                </button>
+              </div>
+
+              <!-- Pairing Output Box -->
+              <div id="pairing-session-box" style="display: none; background: rgba(15, 23, 42, 0.75); border: 1px solid var(--border-cyan); border-radius: var(--radius-sm); padding: 0.95rem; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <canvas id="pairing-qr-canvas" width="136" height="136" style="background: #fff; padding: 6px; border-radius: 6px; flex-shrink: 0;"></canvas>
+                <div style="flex: 1; min-width: 190px;">
+                  <div class="mono" style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">One-Time Pairing Code</div>
+                  <div class="mono" id="pairing-code-display" style="font-size: 1.55rem; font-weight: 800; letter-spacing: 0.14em; color: var(--cyan); margin: 0.2rem 0;">------</div>
+                  <div class="mono" id="pairing-expiry-display" style="font-size: 0.72rem; color: var(--accent-amber);">Expires in 300s &bull; Single-Use</div>
+                  <div class="mono" id="pairing-url-display" style="font-size: 0.68rem; color: var(--text-dim); margin-top: 0.35rem; word-break: break-all;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Card: Join as Camera Client Node (Claim Pairing Code or Direct Register) -->
+            <div class="vanta-card hud-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <span>2. Activate This Device as Camera Node</span>
+                </div>
+                <span class="badge badge-high mono" id="local-node-mode-badge">CENTRAL COMMAND MODE</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 0.85rem;">
+                Claim a 6-digit pairing code or directly register this browser session (Desktop, Android, or iOS Safari) as a live Edge AI Camera Client streaming telemetry &amp; detections.
+              </p>
+
+              <form id="form-claim-pairing" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.85rem;">
+                <input type="text" class="vanta-input mono" id="claim-pairing-code-input" placeholder="6-Digit Code (e.g. A7K9Q2)" maxlength="10" style="width: 155px; text-transform: uppercase; font-weight: 700;">
+                <input type="text" class="vanta-input" id="claim-device-name-input" placeholder="Device Name (e.g. Patrol iPhone 15)" style="flex: 1; min-width: 150px;">
+                <select class="vanta-select mono" id="claim-facing-mode-select" style="font-size: 0.76rem;">
+                  <option value="environment">Rear Camera (environment)</option>
+                  <option value="user">Front Camera (user)</option>
+                </select>
+                <button type="submit" class="btn btn-primary mono" style="font-size: 0.76rem;">Claim &amp; Pair</button>
+              </form>
+
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; padding-top: 0.65rem; border-top: 1px solid var(--border-subtle);">
+                <button class="btn btn-sm mono" id="btn-register-this-device" style="border-color: var(--cyan); color: var(--cyan);">
+                  + Instant Register This Device
+                </button>
+                <button class="btn btn-sm mono" id="btn-toggle-camera-node-mode" style="border-color: var(--accent-emerald); color: var(--accent-emerald);">
+                  Start Edge Camera Node Broadcast
+                </button>
+              </div>
+              <div class="mono" id="local-device-node-status" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.65rem;">
+                Local Node ID: Unregistered &bull; Heartbeat: Idle
+              </div>
+            </div>
+          </div>
+
+          <!-- Registered Multi-Device Inventory Table -->
+          <div class="vanta-card">
+            <div class="card-header">
+              <div class="card-title">Registered Multi-Device Inventory &amp; Edge Telemetry</div>
+              <span class="mono" style="font-size: 0.74rem; color: var(--text-dim);" id="devices-table-meta">Tenant-isolated device registry</span>
+            </div>
+            <div class="table-container">
+              <table class="vanta-table">
+                <thead>
+                  <tr>
+                    <th>Device ID</th>
+                    <th>Device Name &amp; Role</th>
+                    <th>Camera ID</th>
+                    <th>Status &amp; Latency</th>
+                    <th>FPS / Battery</th>
+                    <th>Last Heartbeat</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="devices-table-body">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-dim);" class="mono">Loading registered devices...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 11: POLYGON ZONE INTELLIGENCE & CORRELATIONS         -->
+        <!-- ========================================================= -->
+        <section id="view-zones" class="view-section">
+          <div class="page-header-banner">
+            <div>
+              <h1 class="page-title">Polygon Zone Intelligence &amp; Cross-Camera Correlation</h1>
+              <div class="page-subtitle">Spatial Intrusion Polygons &bull; Loitering Thresholds &bull; Multi-Camera Entity Trajectory Correlation</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn btn-sm btn-primary mono" id="btn-refresh-zones">Refresh Zones &amp; Correlations</button>
+            </div>
+          </div>
+
+          <div class="grid-2col" style="margin-bottom: 1.25rem;">
+            <!-- Left: Interactive Polygon Zone Creator -->
+            <div class="vanta-card hud-card">
+              <div class="card-header">
+                <div class="card-title">Define New Spatial Polygon Zone</div>
+                <span class="badge badge-amber mono">RAY-CASTING ENGINE</span>
+              </div>
+              <form id="form-create-zone">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.65rem;">
+                  <div>
+                    <label class="modal-form-label">Zone Name</label>
+                    <input type="text" class="vanta-input" id="zone-name-input" placeholder="e.g. Server Vault Perimeter" required>
+                  </div>
+                  <div>
+                    <label class="modal-form-label">Assigned Camera</label>
+                    <select class="vanta-select mono" id="zone-camera-select" style="width: 100%;">
+                      <option value="CAM-01-ENTRANCE">CAM-01-ENTRANCE</option>
+                      <option value="CAM-02-LOBBY">CAM-02-LOBBY</option>
+                      <option value="CAM-03-BACKDOOR">CAM-03-BACKDOOR</option>
+                      <option value="CAM-04-DOCK">CAM-04-DOCK</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.65rem; margin-bottom: 0.65rem;">
+                  <div>
+                    <label class="modal-form-label">Zone Type</label>
+                    <select class="vanta-select mono" id="zone-type-select" style="width: 100%;">
+                      <option value="restricted">restricted</option>
+                      <option value="loitering">loitering</option>
+                      <option value="entry_exit">entry_exit</option>
+                      <option value="hazard">hazard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="modal-form-label">Severity</label>
+                    <select class="vanta-select mono" id="zone-severity-select" style="width: 100%;">
+                      <option value="CRITICAL">CRITICAL</option>
+                      <option value="HIGH" selected>HIGH</option>
+                      <option value="MEDIUM">MEDIUM</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="modal-form-label">Max Dwell (sec)</label>
+                    <input type="number" class="vanta-input mono" id="zone-dwell-input" value="15" min="1" max="600">
+                  </div>
+                </div>
+                <div style="margin-bottom: 0.75rem;">
+                  <label class="modal-form-label">Normalized Polygon Vertices JSON (0.0 to 1.0)</label>
+                  <input type="text" class="vanta-input mono" id="zone-polygon-input" value='[{"x":0.52,"y":0.15},{"x":0.95,"y":0.15},{"x":0.95,"y":0.88},{"x":0.52,"y":0.88}]' required>
+                </div>
+                <button type="submit" class="btn btn-primary mono" style="width: 100%; justify-content: center;">
+                  + Deploy Polygon Zone Rule
+                </button>
+              </form>
+            </div>
+
+            <!-- Right: Cross-Camera Spatio-Temporal Correlations -->
+            <div class="vanta-card hud-card">
+              <div class="card-header">
+                <div class="card-title">Cross-Camera Entity Correlations (GET /api/v1/correlations)</div>
+                <span class="badge badge-low mono" id="correlations-count-badge">LIVE RE-ID</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Automatically correlates object classes and trajectories across distinct camera nodes and devices within a 10-minute temporal window.
+              </p>
+              <div id="correlations-list-container" style="display: flex; flex-direction: column; gap: 0.55rem; max-height: 250px; overflow-y: auto;">
+                <div class="mono" style="font-size: 0.76rem; color: var(--text-dim);">Loading cross-camera correlations...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Polygon Zones Table -->
+          <div class="vanta-card">
+            <div class="card-header">
+              <div class="card-title">Configured Spatial Polygon Zones</div>
+              <span class="mono" style="font-size: 0.74rem; color: var(--text-dim);">Evaluated in real time by Live Scanner &amp; Vanta Brain</span>
+            </div>
+            <div class="table-container">
+              <table class="vanta-table">
+                <thead>
+                  <tr>
+                    <th>Zone ID</th>
+                    <th>Zone Name</th>
+                    <th>Camera ID</th>
+                    <th>Type &amp; Severity</th>
+                    <th>Target Classes</th>
+                    <th>Dwell Threshold</th>
+                    <th>Vertices</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="zones-table-body">
+                  <tr><td colspan="8" style="text-align: center; color: var(--text-dim);" class="mono">Loading spatial polygon zones...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 13. VIEW: DIGITAL TWIN (2D/3D TACTICAL SPATIAL HUD) -->
+        <section id="view-digital-twin" class="view-section">
+          <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <div class="view-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#00e5ff" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                <span>Digital Twin — 2D Spatial Operations Model</span>
+                <span class="badge badge-cyan mono" id="twin-node-count-badge">3 Nodes Synced</span>
+              </div>
+              <div class="view-subtitle">Real-time spatiotemporal telemetry, camera field-of-view projections, and polygon perimeter boundaries</div>
+            </div>
+            <div style="display: flex; gap: 0.45rem; align-items: center;">
+              <button type="button" class="btn btn-sm mono" id="btn-twin-reset-view" title="Reset View Coordinates">Reset View</button>
+              <button type="button" class="btn btn-sm mono" id="btn-twin-toggle-zones" style="border-color: #00e5ff; color: #00e5ff;">Zones: ON</button>
+              <button type="button" class="btn btn-sm mono" id="btn-twin-toggle-tracks" style="border-color: #10b981; color: #10b981;">Tracks: ON</button>
+              <button type="button" class="btn btn-sm btn-primary mono" id="btn-twin-refresh">Sync Twin</button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-top: 1rem;">
+            <!-- Twin Interactive Canvas -->
+            <div class="vanta-card" style="padding: 0; overflow: hidden; position: relative;">
+              <div style="position: absolute; top: 12px; left: 14px; z-index: 10; display: flex; gap: 0.5rem; align-items: center;">
+                <span class="mono" style="font-size: 0.7rem; background: rgba(5,11,22,0.85); padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-subtle); color: #00e5ff;">
+                  FLOORPLAN: LEVEL 1 (PRIMARY SOC &amp; PERIMETER)
+                </span>
+                <span class="mono" style="font-size: 0.7rem; background: rgba(5,11,22,0.85); padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-subtle); color: #10b981;" id="twin-status-indicator">
+                  ● TELEMETRY STREAMING
+                </span>
+              </div>
+              <canvas id="digital-twin-canvas" width="1280" height="720" style="width: 100%; height: 480px; background: #040914; display: block;"></canvas>
+            </div>
+
+            <!-- Twin Nodes & Zones Intelligence Sidebar -->
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div class="vanta-card" style="flex: 1;">
+                <div class="card-header">
+                  <div class="card-title">Connected Camera Nodes</div>
+                  <span class="mono" style="font-size: 0.72rem; color: #00e5ff;" id="twin-online-devices-label">2 Active</span>
+                </div>
+                <div id="twin-nodes-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
+                  <div class="mono" style="font-size: 0.74rem; color: var(--text-dim); text-align: center; padding: 1rem;">Loading spatial nodes...</div>
+                </div>
+              </div>
+
+              <div class="vanta-card" style="flex: 1;">
+                <div class="card-header">
+                  <div class="card-title">Active Restricted Boundaries</div>
+                  <span class="mono" style="font-size: 0.72rem; color: #f43f5e;" id="twin-zones-count-label">3 Zones</span>
+                </div>
+                <div id="twin-zones-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
+                  <div class="mono" style="font-size: 0.74rem; color: var(--text-dim); text-align: center; padding: 1rem;">Loading boundary polygons...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 14. VIEW: FORENSIC REPLAY (TIME-MACHINE AUDIT) -->
+        <section id="view-forensic-replay" class="view-section">
+          <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <div class="view-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#c084fc" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Forensic Time-Machine &amp; Telemetry Replay</span>
+                <span class="badge badge-medium mono">CIRCULAR BUFFER SYNCHRONIZED</span>
+              </div>
+              <div class="view-subtitle">Frame-accurate historical incident investigation, object trajectories, and spatiotemporal audit scrubbing</div>
+            </div>
+            <div style="display: flex; gap: 0.45rem; align-items: center;">
+              <button type="button" class="btn btn-sm mono" id="btn-forensic-export-evidence" style="border-color: #00e5ff; color: #00e5ff;">Export Evidence Record</button>
+              <button type="button" class="btn btn-sm btn-primary mono" id="btn-forensic-refresh">Query History</button>
+            </div>
+          </div>
+
+          <!-- Main Forensic Investigation Layout -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-top: 1rem;">
+            <!-- Replay Player & Scrubber -->
+            <div class="vanta-card" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="position: relative; background: #030712; border-radius: 6px; overflow: hidden;">
+                <canvas id="forensic-replay-canvas" width="1280" height="720" style="width: 100%; height: 380px; display: block; background: #050b16;"></canvas>
+                <div style="position: absolute; top: 10px; left: 12px; z-index: 10; display: flex; gap: 0.5rem;">
+                  <span class="badge badge-cyan mono" id="forensic-replay-status-badge">REPLAY: PAUSED</span>
+                  <span class="mono" id="forensic-replay-frame-counter" style="font-size: 0.7rem; background: rgba(0,0,0,0.7); padding: 0.2rem 0.5rem; border-radius: 4px; color: #fff;">Frame 0 / 0</span>
+                </div>
+              </div>
+
+              <!-- Dedicated Replay Scrubber Controls -->
+              <div style="background: rgba(5,11,22,0.9); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.65rem 0.95rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                  <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span class="mono" style="font-size: 0.76rem; color: #00e5ff; font-weight: 700;">TIMELINE POSITION:</span>
+                    <span class="mono" id="forensic-scrub-time-label" style="font-size: 0.74rem; color: #fff;">LIVE</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <button type="button" class="btn btn-sm mono" id="btn-forensic-step-backward" style="font-size: 0.7rem;">&lt;&lt; -10s</button>
+                    <button type="button" class="btn btn-sm btn-primary mono" id="btn-forensic-play" style="font-size: 0.72rem; padding: 0.25rem 0.75rem;">Play</button>
+                    <button type="button" class="btn btn-sm mono" id="btn-forensic-step-forward" style="font-size: 0.7rem;">+10s &gt;&gt;</button>
+                    <select class="vanta-select mono" id="forensic-speed-select" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">
+                      <option value="0.5">0.5x Speed</option>
+                      <option value="1" selected>1.0x Normal</option>
+                      <option value="2">2.0x Fast</option>
+                      <option value="5">5.0x Max</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <span class="mono" style="font-size: 0.7rem; color: var(--text-dim);">-10m</span>
+                  <input type="range" id="forensic-main-scrubber" min="0" max="600" value="600" step="1" style="flex: 1; accent-color: #c084fc; cursor: pointer;">
+                  <span class="mono" style="font-size: 0.7rem; color: #10b981;">Now</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Forensic Historical Event Log -->
+            <div class="vanta-card" style="display: flex; flex-direction: column;">
+              <div class="card-header">
+                <div class="card-title">Synchronized Incident Detections</div>
+                <span class="mono" style="font-size: 0.72rem; color: var(--text-dim);" id="forensic-event-count">0 Recorded</span>
+              </div>
+              <div class="table-container" style="flex: 1; max-height: 420px; overflow-y: auto;">
+                <table class="vanta-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Class</th>
+                      <th>Conf</th>
+                      <th>Camera</th>
+                      <th>Zone</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forensic-events-table-body">
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-dim);" class="mono">No historical events in current window</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>

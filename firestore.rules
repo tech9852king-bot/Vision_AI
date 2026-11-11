@@ -100,5 +100,29 @@ service cloud.firestore {
       // Strictly immutable: No updates or deletions allowed under any condition
       allow update, delete: if false;
     }
+
+    // 6. Devices Collection: Registered Multi-Device Camera Nodes
+    match /devices/{deviceId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        isValidId(deviceId) &&
+        incoming().name is string &&
+        incoming().name.size() <= 120 &&
+        incoming().role in ['CENTRAL_COMMAND', 'CAMERA_NODE', 'VIEWER'];
+      allow update: if isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastHeartbeat', 'batteryPct', 'latencyMs', 'streamMode', 'revoked']);
+      allow delete: if isAdmin();
+    }
+
+    // 7. Zones Collection: Polygon Security Zones
+    match /zones/{zoneId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        isValidId(zoneId) &&
+        incoming().name is string &&
+        incoming().name.size() <= 120 &&
+        incoming().zoneType in ['RESTRICTED', 'LOITERING', 'ENTRY_EXIT', 'SAFE_CORRIDOR'];
+      allow update, delete: if isSignedIn();
+    }
   }
 }

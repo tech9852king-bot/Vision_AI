@@ -6,9 +6,9 @@
     "dev": "node dev-server.cjs",
     "build": "npm run check:syntax && tsc --noEmit && node -e \"console.log('[BUILD] Static syntax validated; TypeScript checked (noEmit). Active app served directly from static/ without bundling.')\"",
     "start": "node dev-server.cjs",
-    "check:syntax": "node -c dev-server.cjs && node -c static/app.js && node -c tests/test_api_endpoints.js && node -c tests/test_aleana_voice.js && node -c tests/test_multi_object_detection.js && node -c tests/test_copilot_multi_detection.js && node -c tests/test_firebase_integration.js",
+    "check:syntax": "node -c dev-server.cjs && node -c static/app.js && node -c tests/test_api_endpoints.js && node -c tests/test_aleana_voice.js && node -c tests/test_multi_object_detection.js && node -c tests/test_copilot_multi_detection.js && node -c tests/test_firebase_integration.js && node -c tests/test_camera_reconnection_and_audio.js && node -c tests/test_multi_device_and_security.js",
     "check:types": "tsc --noEmit",
-    "test": "node tests/test_api_endpoints.js && node tests/test_aleana_voice.js && node tests/test_multi_object_detection.js && node tests/test_copilot_multi_detection.js && node tests/test_firebase_integration.js && python3 -m unittest discover -s tests",
+    "test": "node tests/test_api_endpoints.js && node tests/test_aleana_voice.js && node tests/test_multi_object_detection.js && node tests/test_copilot_multi_detection.js && node tests/test_firebase_integration.js && node tests/test_camera_reconnection_and_audio.js && node tests/test_multi_device_and_security.js && python3 -m unittest discover -s tests",
     "lint": "node -e \"console.log('[LINT] Notice: ESLint is not configured in this prototype. Executing JavaScript syntax validation instead:');\" && npm run check:syntax"
   },
   "dependencies": {

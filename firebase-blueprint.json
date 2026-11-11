@@ -183,6 +183,35 @@
         }
       },
       "required": ["tenantId", "action", "actor", "status", "timestamp"]
+    },
+    "Device": {
+      "title": "Device",
+      "description": "Registered multi-device camera node or central command workstation",
+      "type": "object",
+      "properties": {
+        "tenantId": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 120 },
+        "deviceType": { "type": "string", "maxLength": 32 },
+        "role": { "type": "string", "enum": ["CENTRAL_COMMAND", "CAMERA_NODE", "VIEWER"] },
+        "cameraId": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["ONLINE", "OFFLINE", "SIMULATED", "REVOKED"] },
+        "lastHeartbeat": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["tenantId", "name", "role", "cameraId", "status"]
+    },
+    "Zone": {
+      "title": "Zone",
+      "description": "Polygon spatial security zone with occupancy and dwell thresholds",
+      "type": "object",
+      "properties": {
+        "tenantId": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 120 },
+        "cameraId": { "type": "string", "maxLength": 64 },
+        "zoneType": { "type": "string", "enum": ["RESTRICTED", "LOITERING", "ENTRY_EXIT", "SAFE_CORRIDOR"] },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "enabled": { "type": "boolean" }
+      },
+      "required": ["tenantId", "name", "cameraId", "zoneType", "severity", "enabled"]
     }
   },
   "firestore": {
@@ -205,6 +234,14 @@
     "/audit/{auditId}": {
       "schema": { "$ref": "#/entities/AuditLog" },
       "description": "Immutable operations audit log"
+    },
+    "/devices/{deviceId}": {
+      "schema": { "$ref": "#/entities/Device" },
+      "description": "Registered multi-device camera nodes and workstations"
+    },
+    "/zones/{zoneId}": {
+      "schema": { "$ref": "#/entities/Zone" },
+      "description": "Polygon spatial security zones"
     }
   }
 }

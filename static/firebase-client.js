@@ -17,7 +17,8 @@ import {
   collection,
   addDoc,
   getDocFromServer,
-  serverTimestamp
+  serverTimestamp,
+  setLogLevel
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -65,6 +66,7 @@ try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   try {
+    setLogLevel('silent');
     db = initializeFirestore(app, {
       experimentalAutoDetectLongPolling: true
     }, firebaseConfig.firestoreDatabaseId);
@@ -72,23 +74,21 @@ try {
     db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
   }
 
-  // Validate connection to Firestore per skill mandate
+  // Validate connection to Firestore per skill mandate with responsive timeout
   (async function testConnection() {
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('the client is offline or timed out')), 4000)
-      );
       await Promise.race([
         getDocFromServer(doc(db, 'test', 'connection')),
-        timeoutPromise
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection check timeout')), 4000))
       ]);
       isConnected = true;
       console.log('[VantaVisionAI] Firebase Firestore online & connected.');
     } catch (error) {
-      if (error instanceof Error && (error.message.includes('offline') || error.message.includes('timed out') || error.message.includes('Could not reach'))) {
-        console.warn('[VantaVisionAI] Firebase operating in local/offline mode. Local SQLite active.');
+      if (error && (error.code === 'not-found' || error.message?.includes('not found'))) {
+        isConnected = true;
+        console.log('[VantaVisionAI] Firebase Firestore online & connected.');
       } else {
-        console.warn('[VantaVisionAI] Firebase connection check status:', error.message || error);
+        console.warn('[VantaVisionAI] Firebase operating in local/offline fallback mode. Local SQLite active.');
       }
     }
   })();
@@ -213,6 +213,71 @@ async function syncIncident(inc) {
   }
 }
 
+// Cloud Synchronization API for Camera Health & Reconnection Telemetry
+async function syncCameraStatus(cameraId = 'WEBCAM', status = 'active', details = {}) {
+  if (!db || !currentUser) return null;
+  const path = 'audit';
+  try {
+    const isError = (status === 'error' || status === 'failed' || status === 'exhausted' || status === 'permission_denied');
+    const docRef = await addDoc(collection(db, path), {
+      tenantId: 'default',
+      action: `CAMERA_${status.toUpperCase()}`.slice(0, 120),
+      status: isError ? 'FAILED' : 'SUCCESS',
+      cameraId: String(cameraId || 'WEBCAM').slice(0, 64),
+      details: typeof details === 'string' ? details.slice(0, 500) : JSON.stringify(details).slice(0, 500),
+      timestamp: new Date().toISOString(),
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    handleFirestoreError(err, 'create', path);
+    return null;
+  }
+}
+
+// Cloud Synchronization API for Registered Multi-Device Camera Nodes
+async function syncDeviceRegistration(dev) {
+  if (!db || !currentUser || !dev) return null;
+  const path = 'devices';
+  try {
+    const docRef = await addDoc(collection(db, path), {
+      tenantId: dev.tenant_id || 'default',
+      name: String(dev.name || 'Edge Camera Node').slice(0, 120),
+      deviceType: String(dev.device_type || 'mobile').slice(0, 32),
+      role: dev.role || 'CAMERA_NODE',
+      cameraId: String(dev.camera_id || 'CAM-NODE').slice(0, 64),
+      status: dev.status || 'ONLINE',
+      lastHeartbeat: new Date().toISOString(),
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    handleFirestoreError(err, 'create', path);
+    return null;
+  }
+}
+
+// Cloud Synchronization API for Polygon Security Zones
+async function syncZoneDefinition(zone) {
+  if (!db || !currentUser || !zone) return null;
+  const path = 'zones';
+  try {
+    const docRef = await addDoc(collection(db, path), {
+      tenantId: zone.tenant_id || 'default',
+      name: String(zone.name || 'Security Zone').slice(0, 120),
+      cameraId: String(zone.camera_id || 'CAM-01-ENTRANCE').slice(0, 64),
+      zoneType: zone.zone_type || 'RESTRICTED',
+      severity: zone.severity || 'HIGH',
+      enabled: zone.enabled !== undefined ? Boolean(zone.enabled) : true,
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    handleFirestoreError(err, 'create', path);
+    return null;
+  }
+}
+
 // Attach click listener for Auth Button
 document.addEventListener('DOMContentLoaded', () => {
   const btnAuth = document.getElementById('btn-auth-action');
@@ -237,5 +302,9 @@ window.VantaFirebase = {
   signIn,
   signOut: handleSignOut,
   syncDetectionEvent,
-  syncIncident
+  syncIncident,
+  syncCameraStatus,
+  syncDeviceRegistration,
+  syncZoneDefinition
 };
+

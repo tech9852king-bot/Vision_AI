@@ -18,14 +18,17 @@ from backend.app.schemas import (
 from backend.app.core_brain import ALLOWLISTED_COMMANDS
 from backend.app.brain_service import BrainService
 from backend.app.brain_tools import GLOBAL_TOOL_REGISTRY
+from backend.app.auth import get_auth_context
 
 router = APIRouter(prefix="/api/v1/brain", tags=["brain"])
 
-def get_tenant_id(x_tenant_id: Optional[str] = Header(None)) -> str:
-    if not x_tenant_id or x_tenant_id.strip() == "":
-        return "default"
-    clean_tenant = "".join(c for c in x_tenant_id if c.isalnum() or c in "-_")
-    return clean_tenant or "default"
+def get_tenant_id(
+    authorization: Optional[str] = Header(None),
+    x_tenant_id: Optional[str] = Header(None)
+) -> str:
+    ctx = get_auth_context(authorization=authorization, x_tenant_id=x_tenant_id)
+    return getattr(ctx, "tenant_id", None) or (ctx["tenant_id"] if "tenant_id" in ctx else "default")
+
 
 @router.post("", response_model=BrainCommandResponse)
 async def execute_brain_command(

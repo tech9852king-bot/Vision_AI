@@ -16,13 +16,14 @@ from backend.app.routers import (
     copilot,
     audit,
     demo,
-    aleana
+    aleana,
+    devices
 )
 
 app = FastAPI(
-    title="VantaVisionAI Funding Prototype",
-    description="Vision AI Security Scanner, Controlled Brain Command Interface, and Threat Intelligence",
-    version="1.0.0"
+    title="VantaVisionAI Next-Gen Multi-Device Platform",
+    description="Multi-Device Vision AI, 9-Layer Vanta Brain, Grounded Copilot, and ALEANA Voice Intelligence",
+    version="2.0.0"
 )
 
 # CORS configuration
@@ -44,6 +45,7 @@ app.include_router(copilot.router)
 app.include_router(audit.router)
 app.include_router(demo.router)
 app.include_router(aleana.router)
+app.include_router(devices.router)
 
 # Root directory resolution
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -53,16 +55,37 @@ static_dir = os.path.join(project_root, "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-@app.get("/", include_in_schema=False)
-@app.get("/index.html", include_in_schema=False)
-async def serve_index():
+@app.get("/manifest.json", include_in_schema=False)
+async def serve_manifest():
+    p = os.path.join(static_dir, "manifest.json")
+    if os.path.exists(p):
+        return FileResponse(p, media_type="application/manifest+json")
+    return {"error": "manifest not found"}
+
+@app.get("/sw.js", include_in_schema=False)
+async def serve_sw():
+    p = os.path.join(static_dir, "sw.js")
+    if os.path.exists(p):
+        return FileResponse(p, media_type="application/javascript")
+    return {"error": "sw not found"}
+
+@app.get("/{pwa_asset:path}", include_in_schema=False)
+async def serve_root_or_pwa(pwa_asset: str = ""):
+    if pwa_asset in ("", "index.html"):
+        root_index = os.path.join(project_root, "index.html")
+        if os.path.exists(root_index):
+            return FileResponse(root_index)
+        static_index = os.path.join(static_dir, "index.html")
+        if os.path.exists(static_index):
+            return FileResponse(static_index)
+        return {"status": "ok", "message": "VantaVisionAI API", "docs": "/docs"}
+    candidate = os.path.join(static_dir, pwa_asset)
+    if os.path.isfile(candidate):
+        return FileResponse(candidate)
     root_index = os.path.join(project_root, "index.html")
     if os.path.exists(root_index):
         return FileResponse(root_index)
-    static_index = os.path.join(static_dir, "index.html")
-    if os.path.exists(static_index):
-        return FileResponse(static_index)
-    return {"status": "ok", "message": "VantaVisionAI Funding Prototype API", "docs": "/docs"}
+    return {"status": "ok", "message": "VantaVisionAI API"}
 
 if __name__ == "__main__":
     import uvicorn

@@ -9,10 +9,16 @@ services:
     environment:
       - PORT=8000
       - HOST=0.0.0.0
-      - DATABASE_URL=sqlite:///./vanta_vision.db
+      - DATABASE_URL=sqlite:///./data/vanta_vision.db
+      - DATABASE_PATH=/app/data/vanta_vision.db
       - ENVIRONMENT=production
       - REAL_CAMERA_CONFIGURED=false
-      - CAMERA_PROVIDER=SIMULATED
+      - CAMERA_PROVIDER=MULTI_DEVICE_EDGE
+      - GEMINI_LIVE_MODEL=gemini-3.8-live
+      - GEMINI_REASONING_MODEL=gemini-3.8-flash
+      - GEMINI_TTS_MODEL=gemini-3.8-flash-tts
+      - GEMINI_TTS_LITE_MODEL=gemini-3.8-flash-lite-tts
+      - GEMINI_TRANSCRIBE_MODEL=gemini-3.5-transcribe
     volumes:
       - ./data:/app/data
     restart: unless-stopped

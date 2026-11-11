@@ -317,6 +317,49 @@ async def query_copilot(
                 "Run the Demo Simulation under Pipeline tab to test event propagation."
             ]
 
+        elif any(term in query_lower for term in ["device", "paired", "mobile", "node", "qr"]):
+            cursor.execute("SELECT id, name, device_type, role, camera_id, status FROM devices WHERE tenant_id = ? AND revoked = 0", (tenant_id,))
+            devs = [dict(r) for r in cursor.fetchall()]
+            online_devs = [d for d in devs if d["status"] == "ONLINE"]
+            finding = f"Multi-Device Registry has {len(devs)} registered node(s) ({len(online_devs)} ONLINE) for tenant '{tenant_id}'."
+            evidence = [
+                f"Device [{d['id']}]: {d['name']} ({d['device_type']}/{d['role']}) -> Camera {d['camera_id']} [{d['status']}]"
+                for d in devs
+            ] or ["No registered devices found."]
+            interpretation = "Connected devices perform local edge inference and transmit structured metadata or on-demand WebRTC streams to Central Command."
+            recommended_steps = [
+                "Open the Devices view to generate a single-use QR pairing code for mobile camera nodes.",
+                "Monitor device heartbeats and latency in Central Command."
+            ]
+
+        elif any(term in query_lower for term in ["zone", "polygon", "perimeter", "loitering", "occupancy"]):
+            cursor.execute("SELECT id, name, camera_id, zone_type, severity, max_occupancy, max_dwell_sec FROM zones WHERE tenant_id = ? AND enabled = 1", (tenant_id,))
+            zones = [dict(r) for r in cursor.fetchall()]
+            finding = f"Polygon Zone Intelligence has {len(zones)} active spatial security zone(s) enforcing perimeter rules."
+            evidence = [
+                f"Zone [{z['id']}]: '{z['name']}' on {z['camera_id']} ({z['zone_type']}, Max Occ: {z['max_occupancy']}, Max Dwell: {z['max_dwell_sec']}s)"
+                for z in zones
+            ]
+            interpretation = "Ray-casting point-in-polygon geometry evaluates object centroids against restricted and loitering zones in real time."
+            recommended_steps = [
+                "Use the Zone Intelligence tab to draw or modify polygon vertices.",
+                "Inspect zone-linked incidents for dwell or occupancy violations."
+            ]
+
+        elif any(term in query_lower for term in ["correlat", "cross-camera", "across camera", "compare camera"]):
+            cursor.execute("SELECT camera_id, COUNT(*) as cnt FROM events WHERE tenant_id = ? GROUP BY camera_id", (tenant_id,))
+            cam_rows = [dict(r) for r in cursor.fetchall()]
+            finding = f"Cross-Camera Correlation analyzed activity across {len(cam_rows)} distinct camera source(s)."
+            evidence = [
+                f"Camera [{r['camera_id']}]: {r['cnt']} recorded detection event(s)"
+                for r in cam_rows
+            ] or ["Zero multi-camera events recorded yet."]
+            interpretation = "Non-biometric spatiotemporal correlation tracks object class transitions and timestamps across adjacent camera zones."
+            recommended_steps = [
+                "Review the Live Camera Grid to compare simultaneous feeds.",
+                "Run Brain command 'correlations' for full transit vectors."
+            ]
+
         elif any(term in query_lower for term in ["troubleshoot", "error", "fail", "broken", "black screen", "not working"]):
             finding = "Standard diagnostic sequence for camera and scanner issues."
             evidence = [
@@ -341,7 +384,7 @@ async def query_copilot(
             ]
             interpretation = "Platform is continuously monitoring visual inputs against operational security policies."
             recommended_steps = [
-                "Ask specific questions regarding 'incidents', 'policies', 'camera status', or 'troubleshooting'.",
+                "Ask specific questions regarding 'incidents', 'policies', 'devices', 'zones', 'camera status', or 'troubleshooting'.",
                 "Use Brain CLI commands for direct system diagnostics."
             ]
 
@@ -358,18 +401,20 @@ async def query_copilot(
 
         # Optional Hybrid Gemini API Synthesis (1500ms timeout with deterministic fallback)
         gemini_key = os.getenv("GEMINI_API_KEY")
+        reasoning_model = os.getenv("GEMINI_REASONING_MODEL", "gemini-2.5-flash")
         if gemini_key:
             try:
                 def call_gemini():
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+                    model_Target = "gemini-2.5-flash" if "3.8" in reasoning_model else reasoning_model
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_Target}:generateContent?key={gemini_key}"
                     prompt = f"""You are VantaVisionAI SOC Copilot. Refine the interpretation and recommended steps based on verified platform findings:
 Query: "{query_raw}"
 Finding: "{finding}"
 Evidence: {json.dumps(evidence)}
 Current Interpretation: "{interpretation}"
 Return ONLY valid JSON in format: {{"interpretation": "refined concise analysis", "recommended_steps": ["step1", "step2"]}}"""
-                    body = json.dumps({"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}}).encode("utf-8")
-                    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+                    body_bytes = json.dumps({"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}}).encode("utf-8")
+                    req = urllib.request.Request(url, data=body_bytes, headers={"Content-Type": "application/json", "User-Agent": "aistudio-build"})
                     with urllib.request.urlopen(req, timeout=1.5) as resp:
                         res_data = json.loads(resp.read().decode("utf-8"))
                         text_val = res_data["candidates"][0]["content"]["parts"][0]["text"]
@@ -400,6 +445,10 @@ Return ONLY valid JSON in format: {{"interpretation": "refined concise analysis"
             "recommended_steps": recommended_steps,
             "suggested_actions": suggested_actions,
             "limitations": limitations,
+            "verified_facts": finding,
+            "ai_interpretation": interpretation,
+            "recommendation": recommended_steps,
+            "unavailable_information": limitations,
             "tenant_id": tenant_id,
             "timestamp": timestamp,
             "provider_mode": "DETERMINISTIC_GROUNDED",
