@@ -947,11 +947,25 @@ const APPROVED_TOOLS = [
   }
 ];
 
+const MAX_REQUEST_BODY_BYTES = 10 * 1024 * 1024; // 10 MB DoS protection cap
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    let receivedBytes = 0;
+    let aborted = false;
+    req.on('data', chunk => {
+      if (aborted) return;
+      receivedBytes += chunk.length;
+      if (receivedBytes > MAX_REQUEST_BODY_BYTES) {
+        aborted = true;
+        resolve({ __payloadTooLarge: true });
+        return;
+      }
+      body += chunk;
+    });
     req.on('end', () => {
+      if (aborted) return;
       if (!body) return resolve({});
       try {
         resolve(JSON.parse(body));
@@ -969,7 +983,9 @@ function sendJson(res, statusCode, data) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID, X-Operator-Role, X-Role',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin'
   });
   res.end(jsonStr);
 }
@@ -1068,7 +1084,9 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID, X-Operator-Role, X-Role',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin'
     });
     return res.end();
   }
@@ -4299,28 +4317,50 @@ RULES:
     }
   }
 
-  // 11. STATIC & PWA ROOT FILE SERVING
+  // 11. STATIC & PWA ROOT FILE SERVING (Canonical Static Confinement)
+  const staticRootDir = path.resolve(__dirname, 'static');
   const PWA_ROOT_FILES = ['/manifest.json', '/sw.js', '/icon.svg', '/pwa-192x192.png', '/pwa-512x512.png', '/pwa-maskable-512x512.png', '/apple-touch-icon.png'];
   let filePath = '';
-  if (pathname === '/' || pathname === '/index.html') {
-    filePath = path.join(__dirname, 'static', 'index.html');
-  } else if (PWA_ROOT_FILES.includes(pathname)) {
-    filePath = path.join(__dirname, 'static', pathname.slice(1));
-  } else if (pathname.startsWith('/static/')) {
-    filePath = path.join(__dirname, pathname);
+  const decodedPath = (() => {
+    try { return decodeURIComponent(pathname || '/'); } catch (e) { return '/'; }
+  })();
+
+  if (decodedPath.includes('..') || decodedPath.includes('\0')) {
+    return sendJson(res, 403, { error: 'FORBIDDEN_PATH', detail: 'Directory traversal sequences are prohibited.' });
+  }
+
+  if (decodedPath === '/' || decodedPath === '/index.html') {
+    filePath = path.join(staticRootDir, 'index.html');
+  } else if (PWA_ROOT_FILES.includes(decodedPath)) {
+    filePath = path.join(staticRootDir, decodedPath.slice(1));
+  } else if (decodedPath.startsWith('/static/')) {
+    filePath = path.resolve(staticRootDir, decodedPath.slice('/static/'.length));
   } else {
-    filePath = path.join(__dirname, pathname);
+    filePath = path.resolve(staticRootDir, decodedPath.replace(/^\/+/, ''));
+  }
+
+  // Enforce strict confinement inside staticRootDir
+  if (filePath !== staticRootDir && !filePath.startsWith(staticRootDir + path.sep)) {
+    return sendJson(res, 403, { error: 'FORBIDDEN_PATH', detail: 'Access outside static asset boundary is denied.' });
   }
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
-      const fallback = path.join(__dirname, 'static', 'index.html');
+      const fallback = path.join(staticRootDir, 'index.html');
       fs.readFile(fallback, (err2, content) => {
         if (err2) {
-          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.writeHead(404, {
+            'Content-Type': 'text/plain',
+            'X-Content-Type-Options': 'nosniff',
+            'Referrer-Policy': 'strict-origin-when-cross-origin'
+          });
           return res.end('Not Found');
         }
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.writeHead(200, {
+          'Content-Type': 'text/html',
+          'X-Content-Type-Options': 'nosniff',
+          'Referrer-Policy': 'strict-origin-when-cross-origin'
+        });
         res.end(content);
       });
       return;
@@ -4331,12 +4371,18 @@ RULES:
 
     fs.readFile(filePath, (readErr, content) => {
       if (readErr) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.writeHead(500, {
+          'Content-Type': 'text/plain',
+          'X-Content-Type-Options': 'nosniff',
+          'Referrer-Policy': 'strict-origin-when-cross-origin'
+        });
         return res.end('Internal Server Error');
       }
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache',
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin'
       });
       res.end(content);
     });

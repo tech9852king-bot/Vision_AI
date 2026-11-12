@@ -30,10 +30,19 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Tenant-ID", "X-Operator-Role", "X-Role"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 
 # Include all system and API v1 routers
 app.include_router(system.router)
@@ -48,8 +57,8 @@ app.include_router(aleana.router)
 app.include_router(devices.router)
 
 # Root directory resolution
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-static_dir = os.path.join(project_root, "static")
+project_root = os.path.realpath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+static_dir = os.path.realpath(os.path.join(project_root, "static"))
 
 # Mount static frontend if directory exists
 if os.path.exists(static_dir):
@@ -71,6 +80,8 @@ async def serve_sw():
 
 @app.get("/{pwa_asset:path}", include_in_schema=False)
 async def serve_root_or_pwa(pwa_asset: str = ""):
+    if ".." in pwa_asset or "\x00" in pwa_asset:
+        return {"error": "FORBIDDEN_PATH", "detail": "Directory traversal sequences are prohibited."}
     if pwa_asset in ("", "index.html"):
         root_index = os.path.join(project_root, "index.html")
         if os.path.exists(root_index):
@@ -79,8 +90,8 @@ async def serve_root_or_pwa(pwa_asset: str = ""):
         if os.path.exists(static_index):
             return FileResponse(static_index)
         return {"status": "ok", "message": "VantaVisionAI API", "docs": "/docs"}
-    candidate = os.path.join(static_dir, pwa_asset)
-    if os.path.isfile(candidate):
+    candidate = os.path.realpath(os.path.join(static_dir, pwa_asset.lstrip("/")))
+    if candidate.startswith(static_dir + os.sep) and os.path.isfile(candidate):
         return FileResponse(candidate)
     root_index = os.path.join(project_root, "index.html")
     if os.path.exists(root_index):
@@ -90,3 +101,4 @@ async def serve_root_or_pwa(pwa_asset: str = ""):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
+
