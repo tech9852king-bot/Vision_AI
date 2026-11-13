@@ -9,6 +9,8 @@ const url = require('url');
 const crypto = require('crypto');
 const { GoogleGenAI } = require('@google/genai');
 const { WebSocketServer } = require('ws');
+const infraEngine = require('./vanta-infrastructure-engine.cjs');
+const INFRA_TOOL_HANDLERS = {};
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
@@ -947,6 +949,8 @@ const APPROVED_TOOLS = [
   }
 ];
 
+infraEngine.registerInfrastructureBrainExtensions(ALLOWLISTED_COMMANDS, APPROVED_TOOLS, INFRA_TOOL_HANDLERS, DB, logAudit);
+
 const MAX_REQUEST_BODY_BYTES = 10 * 1024 * 1024; // 10 MB DoS protection cap
 
 function readBody(req) {
@@ -1747,6 +1751,27 @@ const server = http.createServer(async (req, res) => {
       finding = `Counter-UAS protocol '${cm}' engaged on target '${targetTrk}'.`;
       interpretation = 'Airspace containment active in SECTOR-ALPHA-ENTRANCE.';
       recommendedSteps = ['Verify RF directional lock', 'Log incident containment dossier'];
+    } else if (['facilities', 'assets', 'equipment', 'sensors', 'telemetry', 'maintenance', 'energy', 'investigations', 'agents', 'workflows', 'operations'].includes(cmdRaw)) {
+      const cmdToTool = {
+        facilities: 'get_facility_registry',
+        assets: 'get_asset_hierarchy',
+        equipment: 'get_equipment_health',
+        sensors: 'ingest_sensor_telemetry',
+        telemetry: 'ingest_sensor_telemetry',
+        maintenance: 'run_predictive_maintenance',
+        energy: 'analyze_energy_intelligence',
+        investigations: 'run_root_cause_investigation',
+        agents: 'orchestrate_specialized_agent',
+        workflows: 'coordinate_operational_workflow',
+        operations: 'get_facility_registry'
+      };
+      const mappedTool = cmdToTool[cmdRaw] || 'get_facility_registry';
+      const handler = INFRA_TOOL_HANDLERS[mappedTool];
+      const toolOut = handler ? handler(tenantId, args) : {};
+      evidence.records = Array.isArray(toolOut) ? toolOut : [toolOut];
+      finding = `VANTA AI Infrastructure OS [${cmdRaw.toUpperCase()}]: Executed ${mappedTool} with verified multi-domain telemetry.`;
+      interpretation = `Synthesized ${cmdRaw} state across Facility -> Asset -> Equipment -> Sensor -> Energy -> Investigation hierarchy.`;
+      recommendedSteps = ['Review cross-system root-cause evidence chain', 'Authorize pending human-gated workflow if maintenance is required'];
     }
 
     const totalElapsed = Math.max(0.25, Number((performance.now() - tStart).toFixed(2)));
@@ -2352,6 +2377,8 @@ const server = http.createServer(async (req, res) => {
           audit_logged: true,
           timestamp: new Date().toISOString()
         };
+      } else if (INFRA_TOOL_HANDLERS[toolName]) {
+        toolData = INFRA_TOOL_HANDLERS[toolName](tenantId, args);
       } else {
         toolData = { message: `Tool '${toolName}' executed successfully.` };
       }
@@ -4315,6 +4342,21 @@ RULES:
         message: err.message
       });
     }
+  }
+
+  // 10b. VANTA AI UNIVERSAL INFRASTRUCTURE INTELLIGENCE OS ROUTES (Gates 2, 3, 4, 5, 7, 8)
+  const handledByInfra = await infraEngine.handleInfrastructureRoutes(req, res, pathname, parsedUrl, {
+    DB,
+    tenantId,
+    actor,
+    authContext: authCtx,
+    readBody,
+    sendJson,
+    logAudit,
+    broadcastRealtimeTelemetry
+  });
+  if (handledByInfra !== false) {
+    return;
   }
 
   // 11. STATIC & PWA ROOT FILE SERVING (Canonical Static Confinement)

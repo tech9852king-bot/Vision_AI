@@ -370,6 +370,16 @@ class BrainService:
                 interpretation = f"Airspace containment active in {cuas_data.get('sector')} (engagement ID {cuas_data.get('engagement_id')})."
                 recommended_steps = ["Verify RF directional lock", "Log incident containment dossier"]
 
+            elif cmd_norm in ("facilities", "assets", "equipment", "sensors", "telemetry", "maintenance", "energy", "investigations", "agents", "workflows", "operations"):
+                mapped_tool = COMMAND_TOOL_MAPPING.get(cmd_norm, "get_facility_registry")
+                t_tool = GLOBAL_TOOL_REGISTRY.execute_tool(mapped_tool, args, tenant_id, actor, actor_role)
+                executed_tools.append({"tool": mapped_tool, "status": t_tool["status"], "execution_time_ms": t_tool["execution_time_ms"]})
+                infra_data = t_tool.get("data") or {}
+                evidence["records"] = [infra_data] if isinstance(infra_data, dict) else list(infra_data)
+                finding = f"VANTA AI Infrastructure OS [{cmd_norm.upper()}]: Executed '{mapped_tool}' with verified multi-domain telemetry."
+                interpretation = f"Synthesized {cmd_norm} state across Facility -> Asset -> Equipment -> Sensor -> Energy -> Investigation hierarchy."
+                recommended_steps = ["Review cross-system root-cause evidence chain", "Authorize pending human-gated workflow if maintenance is required"]
+
             d_l4_l7 = max(0.02, round((time.perf_counter() - t_l4_l7) * 1000, 3))
             d_l4 = round(d_l4_l7 * 0.45, 3)
             d_l7 = round(d_l4_l7 * 0.55, 3)

@@ -25,7 +25,18 @@ ALLOWLISTED_COMMANDS: Dict[str, str] = {
     "twin": "Query 4-sector C4ISR Geo-Spatial Digital Twin topology and active track projections",
     "evaluate": "Evaluate multi-clause compound policy rules against live or candidate telemetry",
     "predict": "Compute Kalman-damped T+1s..T+3s target trajectory and zone breach probability",
-    "cuas": "Engage Counter-UAS containment protocols against unauthorized aerial targets"
+    "cuas": "Engage Counter-UAS containment protocols against unauthorized aerial targets",
+    "facilities": "Inspect unified facility registry, building hierarchy, and active industry profile",
+    "assets": "Query physical infrastructure assets, criticality levels, and dependency lineage",
+    "equipment": "Inspect industrial machinery telemetry, ISO-10816 health scores, and failure risk",
+    "sensors": "Inspect MQTT, OPC UA, and Modbus industrial IoT sensors and adapter health",
+    "telemetry": "Query normalized time-series sensor telemetry readings and z-score anomalies",
+    "maintenance": "Run predictive maintenance RUL analysis and review work-order recommendations",
+    "energy": "Analyze facility kW demand, power factor, wastage, and estimated vs verified savings",
+    "investigations": "Execute 8-domain cross-system root-cause investigation with evidence chains",
+    "agents": "List all 9 specialized Vanta Brain infrastructure agents and orchestration status",
+    "workflows": "Inspect human-gated multi-agent operational workflows and approval states",
+    "operations": "Retrieve unified Global Operations Command Center intelligence synthesis"
 }
 
 # Mapping of commands to underlying approved tools
@@ -46,7 +57,18 @@ COMMAND_TOOL_MAPPING: Dict[str, str] = {
     "twin": "query_digital_twin_state",
     "evaluate": "evaluate_compound_policy",
     "predict": "predict_target_trajectory",
-    "cuas": "engage_counter_uas"
+    "cuas": "engage_counter_uas",
+    "facilities": "get_facility_registry",
+    "assets": "get_asset_hierarchy",
+    "equipment": "get_equipment_health",
+    "sensors": "ingest_sensor_telemetry",
+    "telemetry": "ingest_sensor_telemetry",
+    "maintenance": "run_predictive_maintenance",
+    "energy": "analyze_energy_intelligence",
+    "investigations": "run_root_cause_investigation",
+    "agents": "orchestrate_specialized_agent",
+    "workflows": "coordinate_operational_workflow",
+    "operations": "get_facility_registry"
 }
 
 

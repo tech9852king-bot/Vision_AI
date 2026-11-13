@@ -17,12 +17,13 @@ from backend.app.routers import (
     audit,
     demo,
     aleana,
-    devices
+    devices,
+    infrastructure
 )
 
 app = FastAPI(
-    title="VantaVisionAI Next-Gen Multi-Device Platform",
-    description="Multi-Device Vision AI, 9-Layer Vanta Brain, Grounded Copilot, and ALEANA Voice Intelligence",
+    title="VANTA AI — VantaVisionAI Universal Infrastructure Intelligence OS",
+    description="Universal Infrastructure Intelligence OS, Multi-Device Vision AI, 9-Layer Vanta Brain, Industrial IoT, Predictive Maintenance, Energy Intelligence, and Digital Twin",
     version="2.0.0"
 )
 
@@ -55,6 +56,7 @@ app.include_router(audit.router)
 app.include_router(demo.router)
 app.include_router(aleana.router)
 app.include_router(devices.router)
+app.include_router(infrastructure.router)
 
 # Root directory resolution
 project_root = os.path.realpath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))

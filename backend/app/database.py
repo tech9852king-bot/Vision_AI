@@ -371,8 +371,230 @@ def init_db():
         )
         conn.commit()
 
+    # 8. VANTA AI Universal Infrastructure Intelligence OS Tables (Gate 2)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS facilities (
+        facility_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        name TEXT NOT NULL,
+        industry_profile TEXT DEFAULT 'manufacturing',
+        location TEXT DEFAULT 'Austin, TX',
+        coordinates TEXT DEFAULT '{"lat":30.2672,"lng":-97.7431}',
+        status TEXT DEFAULT 'OPERATIONAL',
+        total_area_sqm REAL DEFAULT 48500,
+        operating_mode TEXT DEFAULT '24x7_CONTINUOUS',
+        environmental_conditions TEXT DEFAULT '{"ambient_temp_c":23.4,"relative_humidity_pct":44}',
+        buildings TEXT DEFAULT '[]',
+        created_at TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS assets (
+        asset_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        facility_id TEXT NOT NULL,
+        building_id TEXT DEFAULT 'BLD-A-PRODUCTION',
+        floor_id TEXT DEFAULT 'FL-A1-MAIN',
+        zone_id TEXT DEFAULT 'ZONE-PERIMETER-ALPHA',
+        name TEXT NOT NULL,
+        asset_type TEXT DEFAULT 'PRODUCTION_MACHINERY',
+        criticality TEXT DEFAULT 'CRITICAL',
+        status TEXT DEFAULT 'ONLINE',
+        coordinates_2d TEXT DEFAULT '{"x":280,"y":220}',
+        linked_camera_id TEXT DEFAULT 'CAM-01-ENTRANCE',
+        linked_equipment_id TEXT,
+        linked_sensors TEXT DEFAULT '[]',
+        provenance TEXT DEFAULT 'VERIFIED_ASSET_REGISTRY'
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS equipment (
+        equipment_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        facility_id TEXT NOT NULL,
+        asset_id TEXT NOT NULL,
+        zone_id TEXT DEFAULT 'ZONE-PERIMETER-ALPHA',
+        camera_id TEXT DEFAULT 'CAM-01-ENTRANCE',
+        name TEXT NOT NULL,
+        category TEXT DEFAULT 'CNC_MACHINING_CENTER',
+        manufacturer TEXT DEFAULT 'Siemens',
+        model TEXT DEFAULT 'DMU-210-P',
+        status TEXT DEFAULT 'WARNING_VIBRATION',
+        temperature_c REAL DEFAULT 86.4,
+        vibration_mm_s REAL DEFAULT 7.45,
+        power_kw REAL DEFAULT 44.2,
+        rated_power_kw REAL DEFAULT 40.0,
+        runtime_hours REAL DEFAULT 8420,
+        mtbf_hours REAL DEFAULT 10000,
+        days_since_maintenance INTEGER DEFAULT 195,
+        recent_anomaly_count INTEGER DEFAULT 3,
+        last_updated TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sensors (
+        sensor_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        facility_id TEXT NOT NULL,
+        equipment_id TEXT NOT NULL,
+        asset_id TEXT NOT NULL,
+        zone_id TEXT DEFAULT 'ZONE-PERIMETER-ALPHA',
+        name TEXT NOT NULL,
+        sensor_type TEXT NOT NULL,
+        unit TEXT NOT NULL,
+        protocol TEXT DEFAULT 'OPC_UA',
+        adapter_id TEXT DEFAULT 'ADP-OPCUA-01',
+        min_threshold REAL DEFAULT 0.1,
+        max_threshold REAL DEFAULT 7.1,
+        current_value REAL DEFAULT 7.45,
+        status TEXT DEFAULT 'ANOMALY_HIGH',
+        provenance TEXT DEFAULT 'SIMULATED_OPC_UA_STREAM',
+        sampling_interval_sec INTEGER DEFAULT 5,
+        last_reading_at TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS telemetry_readings (
+        reading_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        sensor_id TEXT NOT NULL,
+        equipment_id TEXT NOT NULL,
+        facility_id TEXT NOT NULL,
+        metric TEXT NOT NULL,
+        value REAL NOT NULL,
+        unit TEXT NOT NULL,
+        protocol TEXT DEFAULT 'OPC_UA',
+        provenance TEXT DEFAULT 'SIMULATED_OPC_UA_STREAM',
+        is_anomaly INTEGER DEFAULT 0,
+        severity TEXT DEFAULT 'NOMINAL',
+        z_score REAL DEFAULT 0.5,
+        timestamp TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS maintenance_records (
+        maintenance_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        facility_id TEXT NOT NULL,
+        equipment_id TEXT NOT NULL,
+        asset_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        maintenance_type TEXT DEFAULT 'PREDICTIVE_INTERVENTION',
+        priority TEXT DEFAULT 'HIGH',
+        status TEXT DEFAULT 'RECOMMENDED_PENDING_APPROVAL',
+        health_score_at_trigger REAL DEFAULT 34.5,
+        failure_risk_pct REAL DEFAULT 65.5,
+        rul_estimated_hours INTEGER DEFAULT 540,
+        analysis_method TEXT,
+        recommended_action TEXT,
+        limitations TEXT,
+        outcome_status TEXT DEFAULT 'AWAITING_EXECUTION',
+        created_at TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS energy_records (
+        energy_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        facility_id TEXT NOT NULL,
+        scope TEXT DEFAULT 'FACILITY_TOTAL',
+        active_power_kw REAL DEFAULT 542.7,
+        baseline_power_kw REAL DEFAULT 465.0,
+        peak_demand_kw REAL DEFAULT 588.0,
+        power_factor REAL DEFAULT 0.86,
+        idle_equipment_kw REAL DEFAULT 28.5,
+        production_units_per_hr REAL DEFAULT 145.0,
+        electricity_tariff_usd_per_kwh REAL DEFAULT 0.14,
+        verified_savings_kwh_month REAL DEFAULT 4200.0,
+        provenance TEXT DEFAULT 'MODBUS_MAIN_METER_SIMULATION',
+        timestamp TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS investigations (
+        investigation_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        facility_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        status TEXT DEFAULT 'EVIDENCE_CORRELATED',
+        trigger_source TEXT DEFAULT 'CROSS_SYSTEM_CORRELATOR',
+        target_asset_id TEXT,
+        target_equipment_id TEXT,
+        camera_id TEXT DEFAULT 'CAM-01-ENTRANCE',
+        confidence_score REAL DEFAULT 0.91,
+        evidence_chain TEXT DEFAULT '{}',
+        timeline TEXT DEFAULT '[]',
+        supporting_evidence TEXT DEFAULT '[]',
+        contradictory_evidence TEXT DEFAULT '[]',
+        root_cause_hypothesis TEXT,
+        correlation_vs_causation_note TEXT,
+        recommended_inspection_steps TEXT DEFAULT '[]',
+        created_at TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS workflows (
+        workflow_id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        facility_id TEXT NOT NULL,
+        template_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        target_asset_id TEXT,
+        target_equipment_id TEXT,
+        priority TEXT DEFAULT 'HIGH',
+        status TEXT DEFAULT 'PENDING_APPROVAL',
+        requires_human_approval INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("SELECT COUNT(*) as cnt FROM facilities")
+    if cursor.fetchone()["cnt"] == 0:
+        now_iso = datetime.utcnow().isoformat() + "Z"
+        cursor.execute(
+            "INSERT INTO facilities (facility_id, tenant_id, name, industry_profile, location, status, total_area_sqm, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            ("FAC-01-AUSTIN-GIGA", "default", "Vanta Nexus Precision Manufacturing & Microgrid Plant", "manufacturing", "Austin, TX", "OPERATIONAL", 48500.0, now_iso)
+        )
+        cursor.execute(
+            "INSERT INTO assets (asset_id, tenant_id, facility_id, name, asset_type, criticality, status, linked_camera_id, linked_equipment_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("AST-CNC-SPINDLE-01", "default", "FAC-01-AUSTIN-GIGA", "5-Axis CNC Gantry Milling Center #01", "PRODUCTION_MACHINERY", "CRITICAL", "DEGRADED_WARNING", "CAM-01-ENTRANCE", "EQ-CNC-01")
+        )
+        cursor.execute(
+            "INSERT INTO equipment (equipment_id, tenant_id, facility_id, asset_id, name, category, status, temperature_c, vibration_mm_s, power_kw, rated_power_kw, runtime_hours, mtbf_hours, days_since_maintenance, recent_anomaly_count, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("EQ-CNC-01", "default", "FAC-01-AUSTIN-GIGA", "AST-CNC-SPINDLE-01", "Siemens Sinumerik 5-Axis High-Speed Spindle Drive #01", "CNC_MACHINING_CENTER", "WARNING_VIBRATION", 86.4, 7.45, 44.2, 40.0, 8420.0, 10000.0, 195, 3, now_iso)
+        )
+        cursor.execute(
+            "INSERT INTO sensors (sensor_id, tenant_id, facility_id, equipment_id, asset_id, name, sensor_type, unit, protocol, current_value, status, last_reading_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("SEN-VIB-101", "default", "FAC-01-AUSTIN-GIGA", "EQ-CNC-01", "AST-CNC-SPINDLE-01", "CNC Spindle Piezo Vibration Accelerometer", "VIBRATION_RMS", "mm/s", "OPC_UA", 7.45, "ANOMALY_HIGH", now_iso)
+        )
+        cursor.execute(
+            "INSERT INTO maintenance_records (maintenance_id, tenant_id, facility_id, equipment_id, asset_id, title, priority, status, health_score_at_trigger, failure_risk_pct, rul_estimated_hours, analysis_method, recommended_action, limitations, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("MNT-2025-089", "default", "FAC-01-AUSTIN-GIGA", "EQ-CNC-01", "AST-CNC-SPINDLE-01", "Predictive Alert: CNC #01 Spindle Front Bearing Wear", "HIGH", "RECOMMENDED_PENDING_APPROVAL", 34.5, 65.5, 540, "ISO-10816 Multi-Variate Degradation", "Perform 4-hour spindle bearing inspection and lubrication.", "Statistical degradation estimate.", now_iso)
+        )
+        cursor.execute(
+            "INSERT INTO energy_records (energy_id, tenant_id, facility_id, active_power_kw, baseline_power_kw, peak_demand_kw, power_factor, idle_equipment_kw, production_units_per_hr, verified_savings_kwh_month, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("ENG-FAC01-CURRENT", "default", "FAC-01-AUSTIN-GIGA", 542.7, 465.0, 588.0, 0.86, 28.5, 145.0, 4200.0, now_iso)
+        )
+        cursor.execute(
+            "INSERT INTO investigations (investigation_id, tenant_id, facility_id, title, status, target_asset_id, target_equipment_id, camera_id, confidence_score, root_cause_hypothesis, correlation_vs_causation_note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("INV-RCA-2025-001", "default", "FAC-01-AUSTIN-GIGA", "Cross-System RCA: CNC #01 Thermal/Vibration Anomaly", "EVIDENCE_CORRELATED", "AST-CNC-SPINDLE-01", "EQ-CNC-01", "CAM-01-ENTRANCE", 0.91, "Mechanical bearing friction on EQ-CNC-01 causing +10.5% power spike.", "Power spike is an effect of mechanical bearing drag, not upstream transformer fault.", now_iso)
+        )
+        cursor.execute(
+            "INSERT INTO workflows (workflow_id, tenant_id, facility_id, template_id, title, target_asset_id, target_equipment_id, priority, status, requires_human_approval, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("WF-EXEC-101", "default", "FAC-01-AUSTIN-GIGA", "WF-TPL-MAINT-ISOLATION", "Controlled Spindle Inspection & Bearing Work Order — EQ-CNC-01", "AST-CNC-SPINDLE-01", "EQ-CNC-01", "HIGH", "PENDING_APPROVAL", 1, now_iso)
+        )
+        conn.commit()
+
     conn.close()
-    log_audit("default", "SYSTEM_INIT", "system", "SUCCESS", "Database initialized with baseline schemas, multi-device registry, and polygon zones")
+    log_audit("default", "SYSTEM_INIT", "system", "SUCCESS", "Database initialized with baseline schemas, multi-device registry, polygon zones, and VANTA AI infrastructure foundation")
 
 
 def log_audit(tenant_id: str, action: str, actor: str, status: str, details: str):

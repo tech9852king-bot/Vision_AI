@@ -1167,10 +1167,16 @@ const VIEW_PAGE_TITLES = {
   brain: { title: 'Vanta Brain', breadcrumb: '• 9-Layer guarded CLI console' },
   audit: { title: 'Audit Trail', breadcrumb: '• Immutable security ledger' },
   system: { title: 'System Diagnostics', breadcrumb: '• Subsystem health & simulation' },
-  devices: { title: 'Multi-Device Fleet', breadcrumb: '• QR Pairing & Edge Camera Nodes' },
-  zones: { title: 'Zones & Correlation', breadcrumb: '• Spatial Polygon Intelligence & Cross-Camera Re-ID' },
-  'digital-twin': { title: 'Digital Twin', breadcrumb: '• 2D Tactical Spatial Model & Live FoV' },
-  'forensic-replay': { title: 'Forensic Replay', breadcrumb: '• Time-Machine Telemetry & Frame Scrubbing' }
+  devices: { title: 'Multi-Device Fleet', breadcrumb: '• Edge Camera Nodes' },
+  zones: { title: 'Zones & Correlation', breadcrumb: '• Spatial Re-ID' },
+  'digital-twin': { title: 'Digital Twin', breadcrumb: '• 2D/3D Cyber-Physical Model' },
+  'forensic-replay': { title: 'Forensic Replay', breadcrumb: '• Timeline Scrubbing' },
+  facilities: { title: 'Facilities & Assets', breadcrumb: '• Asset Hierarchy' },
+  sensors: { title: 'IoT & Sensors', breadcrumb: '• IIoT Telemetry' },
+  equipment: { title: 'Predictive Maint.', breadcrumb: '• ISO-10816 & RUL' },
+  energy: { title: 'Energy Intelligence', breadcrumb: '• Demand & Savings' },
+  investigations: { title: 'Root-Cause RCA', breadcrumb: '• Evidence Correlation' },
+  workflows: { title: 'AI Ops & Workflows', breadcrumb: '• 9 Agents & Gates' }
 };
 
 function switchView(viewName) {
@@ -1217,6 +1223,24 @@ function switchView(viewName) {
   }
   if (viewName === 'forensic-replay' && typeof loadForensicReplay === 'function') {
     loadForensicReplay();
+  }
+  if (viewName === 'facilities' && typeof loadFacilitiesAndAssets === 'function') {
+    loadFacilitiesAndAssets();
+  }
+  if (viewName === 'sensors' && typeof loadSensorsAndAdapters === 'function') {
+    loadSensorsAndAdapters();
+  }
+  if (viewName === 'equipment' && typeof loadEquipmentAndMaintenance === 'function') {
+    loadEquipmentAndMaintenance();
+  }
+  if (viewName === 'energy' && typeof loadEnergyIntelligence === 'function') {
+    loadEnergyIntelligence();
+  }
+  if (viewName === 'investigations' && typeof loadRootCauseInvestigations === 'function') {
+    loadRootCauseInvestigations();
+  }
+  if (viewName === 'workflows' && typeof loadWorkflowsAndAgents === 'function') {
+    loadWorkflowsAndAgents();
   }
 }
 
@@ -7393,8 +7417,10 @@ async function renderDigitalTwin() {
     ctx.save();
     ctx.beginPath();
     z.polygon.forEach((pt, idx) => {
-      const px = 80 + pt[0] * (canvas.width - 160);
-      const py = 60 + pt[1] * (canvas.height - 120);
+      const rx = Array.isArray(pt) ? pt[0] : (pt?.x ?? 0.2);
+      const ry = Array.isArray(pt) ? pt[1] : (pt?.y ?? 0.2);
+      const px = 80 + rx * (canvas.width - 160);
+      const py = 60 + ry * (canvas.height - 120);
       if (idx === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     });
@@ -7405,7 +7431,9 @@ async function renderDigitalTwin() {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    const [firstX, firstY] = z.polygon[0];
+    const p0 = z.polygon[0];
+    const firstX = Array.isArray(p0) ? p0[0] : (p0?.x ?? 0.2);
+    const firstY = Array.isArray(p0) ? p0[1] : (p0?.y ?? 0.2);
     ctx.fillStyle = z.color || '#f43f5e';
     ctx.font = 'bold 10px JetBrains Mono, monospace';
     ctx.fillText(z.name || z.id, 80 + firstX * (canvas.width - 160) + 6, 60 + firstY * (canvas.height - 120) + 16);
@@ -7413,9 +7441,12 @@ async function renderDigitalTwin() {
   });
 
   const defaultNodeCoords = [
-    { x: 220, y: 180, angle: Math.PI / 4 },
-    { x: 860, y: 190, angle: Math.PI * 0.75 },
-    { x: 340, y: 520, angle: -Math.PI / 4 }
+    { x: 160, y: 140, angle: Math.PI / 4 },
+    { x: 860, y: 140, angle: Math.PI * 0.75 },
+    { x: 160, y: 540, angle: -Math.PI / 4 },
+    { x: 760, y: 560, angle: -Math.PI * 0.75 },
+    { x: 480, y: 130, angle: Math.PI / 2 },
+    { x: 480, y: 560, angle: -Math.PI / 2 }
   ];
 
   devices.forEach((dev, idx) => {
@@ -7470,6 +7501,58 @@ async function renderDigitalTwin() {
   ctx.font = 'bold 10px JetBrains Mono, monospace';
   ctx.fillText('CROSS-CAMERA TRANSIT VECTOR // PERSON TRACK #101', 440, 175);
   ctx.restore();
+
+  // Render Cyber-Physical Infrastructure Asset Nodes & Dependency Graph on Digital Twin
+  try {
+    const twinRes = await fetch('/api/v1/digital-twin', { headers: getAuthHeaders() });
+    if (twinRes.ok) {
+      const twinData = await twinRes.json();
+      const assets = twinData.spatial_nodes || [];
+      const rels = twinData.asset_relationships || [];
+
+      const assetsBadge = document.getElementById('twin-assets-count-badge');
+      if (assetsBadge) assetsBadge.textContent = `${assets.length} ASSETS SYNCED`;
+
+      const assetsListEl = document.getElementById('twin-infrastructure-assets-list');
+      if (assetsListEl) {
+        assetsListEl.innerHTML = assets.map(a => `
+          <div style="background: rgba(5,11,22,0.75); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 0.5rem 0.7rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">${escapeHtml(a.name)}</div>
+              <div class="mono" style="font-size: 0.68rem; color: var(--text-muted);">${escapeHtml(a.asset_id)} &bull; ${escapeHtml(a.asset_type)} &bull; ${a.power_kw || 0} kW &bull; ${a.temperature_c || 24}°C</div>
+            </div>
+            <span class="badge ${a.risk_level === 'LOW' ? 'badge-emerald' : 'badge-amber'} mono">Health: ${a.health_score ?? 95}%</span>
+          </div>
+        `).join('');
+      }
+
+      const depsListEl = document.getElementById('twin-asset-dependencies-list');
+      if (depsListEl) {
+        depsListEl.innerHTML = rels.map(r => `
+          <div style="background: rgba(5,11,22,0.75); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 0.5rem 0.7rem;">
+            <div class="mono" style="font-size: 0.72rem; color: var(--cyan); font-weight: 700;">${escapeHtml(r.source_id)} &rarr; ${escapeHtml(r.target_id)} [${escapeHtml(r.relationship_type)}]</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">${escapeHtml(r.description)}</div>
+          </div>
+        `).join('');
+      }
+
+      // Draw physical equipment/asset boxes on canvas
+      assets.forEach(ast => {
+        const ax = ast.coordinates_2d?.x || 400;
+        const ay = ast.coordinates_2d?.y || 300;
+        ctx.save();
+        ctx.fillStyle = ast.risk_level === 'LOW' ? 'rgba(16, 185, 129, 0.22)' : 'rgba(245, 158, 11, 0.28)';
+        ctx.strokeStyle = ast.risk_level === 'LOW' ? '#10b981' : '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.fillRect(ax - 12, ay - 12, 24, 24);
+        ctx.strokeRect(ax - 12, ay - 12, 24, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px JetBrains Mono, monospace';
+        ctx.fillText(`${ast.asset_id} (${ast.health_score || 95}%)`, ax + 16, ay + 4);
+        ctx.restore();
+      });
+    }
+  } catch (_) {}
 }
 
 // =========================================================================
@@ -7860,6 +7943,616 @@ if (typeof window !== 'undefined') {
   window.synthesizeJarvisResponse = synthesizeJarvisResponse;
 }
 
+// =========================================================================
+// 21. VANTA AI — UNIVERSAL INFRASTRUCTURE INTELLIGENCE OS CONTROLLERS
+// =========================================================================
+
+async function loadFacilitiesAndAssets() {
+  if (typeof window === 'undefined') return;
+  try {
+    const [facRes, astRes] = await Promise.all([
+      fetch('/api/v1/facilities', { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch('/api/v1/assets', { headers: getAuthHeaders() }).then(r => r.json())
+    ]);
+    const profile = facRes.active_industry_profile || {};
+    const profileBadge = document.getElementById('facility-active-profile-badge');
+    if (profileBadge && profile.sector) {
+      profileBadge.textContent = `PROFILE: ${String(profile.sector).toUpperCase()}`;
+    }
+    const profileBox = document.getElementById('facility-profile-details-box');
+    if (profileBox && profile.name) {
+      const term = profile.terminology || {};
+      profileBox.innerHTML = `
+        <div style="background: rgba(15,23,42,0.7); padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--border-subtle);">
+          <div class="mono" style="font-size: 0.68rem; color: var(--text-muted);">ACTIVE SECTOR PROFILE</div>
+          <div style="font-weight: 700; color: var(--cyan); font-size: 0.88rem; margin-top: 2px;">${escapeHtml(profile.name)}</div>
+        </div>
+        <div style="background: rgba(15,23,42,0.7); padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--border-subtle);">
+          <div class="mono" style="font-size: 0.68rem; color: var(--text-muted);">PRIMARY ASSET ARCHETYPE</div>
+          <div style="font-weight: 600; color: #fff; font-size: 0.82rem; margin-top: 2px;">${escapeHtml(term.primary_asset || 'Industrial Rotating Machinery')}</div>
+        </div>
+        <div style="background: rgba(15,23,42,0.7); padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--border-subtle);">
+          <div class="mono" style="font-size: 0.68rem; color: var(--text-muted);">PRIORITY KPI FOCUS</div>
+          <div class="mono" style="font-size: 0.75rem; color: #10b981; margin-top: 2px;">${escapeHtml(term.kpi_focus || profile.kpi_focus || 'ISO-10816 Vibration & kW Demand')}</div>
+        </div>
+      `;
+    }
+
+    const facilities = facRes.facilities || facRes.items || [];
+    const cntLabel = document.getElementById('facilities-count-label');
+    if (cntLabel) cntLabel.textContent = `${facilities.length} Facilities`;
+    const facContainer = document.getElementById('facilities-hierarchy-container');
+    if (facContainer) {
+      facContainer.innerHTML = facilities.map(f => {
+        const env = f.environmental_conditions || {};
+        const blds = Array.isArray(f.buildings) ? f.buildings : [];
+        return `
+          <div style="background: rgba(15,23,42,0.75); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <div>
+                <span class="mono" style="color: var(--cyan); font-weight: 700; font-size: 0.78rem;">${escapeHtml(f.facility_id)}</span>
+                <span style="font-weight: 700; color: #fff; font-size: 0.9rem; margin-left: 0.4rem;">${escapeHtml(f.name)}</span>
+              </div>
+              <span class="badge badge-emerald mono">${escapeHtml(f.status)}</span>
+            </div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              Location: ${escapeHtml(f.location)} &bull; Area: ${Number(f.total_area_sqm || 0).toLocaleString()} m² &bull; Ambient: ${env.ambient_temp_c ?? 23}°C / ${env.relative_humidity_pct ?? 45}% RH
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              ${blds.map(b => `
+                <div class="mono" style="font-size: 0.7rem; background: rgba(5,11,22,0.8); padding: 0.35rem 0.55rem; border-radius: 4px; border-left: 2px solid var(--cyan);">
+                  <strong>${escapeHtml(b.building_id)}</strong>: ${escapeHtml(b.name)} (${(b.floors || []).length} Floor(s))
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    const assets = astRes.assets || astRes.items || [];
+    const tbody = document.getElementById('assets-table-body');
+    if (tbody) {
+      tbody.innerHTML = assets.map(a => `
+        <tr>
+          <td class="mono" style="color: var(--cyan); font-weight: 700;">${escapeHtml(a.asset_id)}</td>
+          <td>
+            <div style="font-weight: 600; color: #fff;">${escapeHtml(a.name)}</div>
+            <div class="mono" style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(a.asset_type)}</div>
+          </td>
+          <td class="mono" style="font-size: 0.74rem;">${escapeHtml(a.facility_id)}<br><span style="color: var(--text-dim);">${escapeHtml(a.zone_id || 'ZONE-ALPHA')}</span></td>
+          <td><span class="badge ${a.criticality === 'CRITICAL' ? 'badge-critical' : 'badge-high'} mono">${escapeHtml(a.criticality)}</span></td>
+          <td class="mono" style="font-size: 0.74rem;">EQ: ${escapeHtml(a.linked_equipment_id || 'N/A')}<br>CAM: ${escapeHtml(a.linked_camera_id || 'CAM-01')}</td>
+          <td class="mono" style="font-size: 0.72rem;">${escapeHtml((a.linked_sensors || []).join(', ') || 'SEN-VIB-101')}</td>
+          <td><span class="badge badge-low mono">${escapeHtml(a.provenance || 'VERIFIED')}</span></td>
+        </tr>
+      `).join('');
+    }
+  } catch (_) {}
+}
+
+async function loadSensorsAndAdapters() {
+  if (typeof window === 'undefined') return;
+  try {
+    const [senRes, telRes] = await Promise.all([
+      fetch('/api/v1/sensors', { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch('/api/v1/telemetry', { headers: getAuthHeaders() }).then(r => r.json())
+    ]);
+    const adapters = senRes.adapters || [];
+    const adaptersGrid = document.getElementById('iot-adapters-grid');
+    if (adaptersGrid && adapters.length > 0) {
+      adaptersGrid.innerHTML = adapters.map(adp => `
+        <div class="vanta-card hud-card" style="padding: 0.9rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+            <span class="mono" style="font-weight: 800; color: var(--cyan); font-size: 0.82rem;">${escapeHtml(adp.protocol)} ADAPTER</span>
+            <span class="badge badge-amber mono" style="font-size: 0.65rem;">${escapeHtml(adp.connection_mode)}</span>
+          </div>
+          <div style="font-weight: 600; color: #fff; font-size: 0.84rem; margin-bottom: 0.3rem;">${escapeHtml(adp.name)}</div>
+          <div class="mono" style="font-size: 0.7rem; color: var(--text-muted); word-break: break-all;">URI: ${escapeHtml(adp.endpoint_uri)}</div>
+          <div class="mono" style="font-size: 0.7rem; color: #10b981; margin-top: 0.35rem;">
+            Isolation: ${escapeHtml(adp.error_isolation)} &bull; Ingested: ${adp.messages_ingested} msgs
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const sensors = senRes.sensors || senRes.items || [];
+    const anomBadge = document.getElementById('sensors-anomaly-summary-badge');
+    if (anomBadge) {
+      anomBadge.textContent = `${senRes.anomalous_count || 0} ANOMALOUS / ${sensors.length} SENSORS`;
+    }
+    const senTbody = document.getElementById('sensors-table-body');
+    if (senTbody) {
+      senTbody.innerHTML = sensors.map(s => {
+        const isAnom = String(s.status).includes('ANOMALY');
+        return `
+          <tr>
+            <td class="mono" style="color: var(--cyan); font-weight: 700;">${escapeHtml(s.sensor_id)}</td>
+            <td>
+              <div style="font-weight: 600; color: #fff;">${escapeHtml(s.name)}</div>
+              <div class="mono" style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(s.sensor_type)}</div>
+            </td>
+            <td class="mono" style="font-size: 0.74rem;">${escapeHtml(s.equipment_id)}<br><span style="color: var(--text-dim);">${escapeHtml(s.zone_id)}</span></td>
+            <td><span class="badge badge-low mono">${escapeHtml(s.protocol)}</span></td>
+            <td class="mono" style="font-weight: 700; color: ${isAnom ? '#f43f5e' : '#10b981'};">${s.current_value} ${escapeHtml(s.unit)}</td>
+            <td class="mono" style="font-size: 0.72rem;">${s.min_threshold} .. ${s.max_threshold} ${escapeHtml(s.unit)}</td>
+            <td>
+              <span class="badge ${isAnom ? 'badge-critical' : 'badge-emerald'} mono">${escapeHtml(s.status)}</span>
+              <div class="mono" style="font-size: 0.66rem; color: var(--text-dim); margin-top: 2px;">${escapeHtml(s.provenance)}</div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    const readings = telRes.telemetry || telRes.items || [];
+    const streamEl = document.getElementById('telemetry-stream-list');
+    if (streamEl) {
+      streamEl.innerHTML = readings.slice(0, 12).map(r => `
+        <div style="background: rgba(15,23,42,0.75); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 0.45rem 0.65rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span class="mono" style="color: var(--cyan); font-weight: 700; font-size: 0.75rem;">${escapeHtml(r.sensor_id)}</span>
+            <span class="mono" style="color: #fff; font-size: 0.78rem; margin-left: 0.4rem;">${r.value} ${escapeHtml(r.unit || '')}</span>
+            <div class="mono" style="font-size: 0.66rem; color: var(--text-muted);">${escapeHtml(r.provenance)} &bull; Z=${r.z_score ?? 0.5}</div>
+          </div>
+          <span class="badge ${r.is_anomaly ? 'badge-critical' : 'badge-emerald'} mono">${r.is_anomaly ? 'ANOMALY' : 'NOMINAL'}</span>
+        </div>
+      `).join('');
+    }
+  } catch (_) {}
+}
+
+async function loadEquipmentAndMaintenance() {
+  if (typeof window === 'undefined') return;
+  try {
+    const res = await fetch('/api/v1/maintenance', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const eqSummary = data.equipment_health_summary || [];
+    const grid = document.getElementById('equipment-health-cards-grid');
+    if (grid) {
+      grid.innerHTML = eqSummary.map(eq => {
+        const isHigh = eq.risk_level === 'CRITICAL' || eq.risk_level === 'HIGH';
+        return `
+          <div class="vanta-card hud-card" style="padding: 1rem; border-color: ${isHigh ? 'rgba(244,63,94,0.45)' : 'var(--border-subtle)'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+              <span class="mono" style="color: var(--cyan); font-weight: 700; font-size: 0.78rem;">${escapeHtml(eq.equipment_id)}</span>
+              <span class="badge ${isHigh ? 'badge-critical' : 'badge-emerald'} mono">${escapeHtml(eq.risk_level)} RISK (${eq.failure_risk_pct}%)</span>
+            </div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.9rem; margin-bottom: 0.5rem;">${escapeHtml(eq.name)}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; margin-bottom: 0.65rem;" class="mono">
+              <div style="background: rgba(5,11,22,0.8); padding: 0.35rem; border-radius: 4px; text-align: center;">
+                <div style="font-size: 0.64rem; color: var(--text-muted);">HEALTH</div>
+                <div style="font-size: 0.92rem; font-weight: 800; color: ${isHigh ? '#f59e0b' : '#10b981'};">${eq.health_score}%</div>
+              </div>
+              <div style="background: rgba(5,11,22,0.8); padding: 0.35rem; border-radius: 4px; text-align: center;">
+                <div style="font-size: 0.64rem; color: var(--text-muted);">VIB / TEMP</div>
+                <div style="font-size: 0.78rem; font-weight: 700; color: #fff;">${eq.vibration_mm_s}mm/s &bull; ${eq.temperature_c}°C</div>
+              </div>
+              <div style="background: rgba(5,11,22,0.8); padding: 0.35rem; border-radius: 4px; text-align: center;">
+                <div style="font-size: 0.64rem; color: var(--text-muted);">EST. RUL</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--cyan);">${eq.rul_estimated_hours}h</div>
+              </div>
+            </div>
+            <div class="mono" style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.35;">
+              <strong>Factors:</strong> ${escapeHtml((eq.contributing_factors || []).join('; '))}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    const records = data.maintenance_records || data.items || [];
+    const tbody = document.getElementById('maintenance-table-body');
+    if (tbody) {
+      tbody.innerHTML = records.map(m => `
+        <tr>
+          <td class="mono" style="color: var(--cyan); font-weight: 700;">${escapeHtml(m.maintenance_id)}</td>
+          <td>
+            <div style="font-weight: 600; color: #fff;">${escapeHtml(m.title)}</div>
+            <div class="mono" style="font-size: 0.7rem; color: var(--text-muted);">Asset: ${escapeHtml(m.equipment_id)}</div>
+          </td>
+          <td class="mono" style="font-size: 0.74rem;">
+            Health: <strong>${m.health_score_at_trigger}%</strong><br>
+            Risk: <strong style="color: #f43f5e;">${m.failure_risk_pct}%</strong> &bull; RUL: ${m.rul_estimated_hours}h
+          </td>
+          <td class="mono" style="font-size: 0.7rem; color: var(--text-muted); max-width: 240px;">
+            <div><strong>Method:</strong> ${escapeHtml(m.analysis_method || 'ISO-10816')}</div>
+          </td>
+          <td style="font-size: 0.76rem; max-width: 260px;">
+            <div style="color: #fff;">${escapeHtml(m.recommended_action)}</div>
+            <div class="mono" style="font-size: 0.66rem; color: var(--accent-amber); margin-top: 3px;">Limitation: ${escapeHtml(m.limitations || 'Requires physical inspection')}</div>
+          </td>
+          <td>
+            <span class="badge ${String(m.status).includes('COMPLETED') ? 'badge-emerald' : 'badge-amber'} mono">${escapeHtml(m.status)}</span>
+            <div class="mono" style="font-size: 0.68rem; color: var(--text-dim); margin-top: 3px;">${escapeHtml(m.outcome_status || '')}</div>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (_) {}
+}
+
+async function loadEnergyIntelligence() {
+  if (typeof window === 'undefined') return;
+  try {
+    const res = await fetch('/api/v1/energy', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const s = data.summary || {};
+    const kwEl = document.getElementById('energy-kpi-active-kw');
+    if (kwEl && s.active_power_kw !== undefined) kwEl.textContent = `${s.active_power_kw} kW`;
+    const varEl = document.getElementById('energy-kpi-variance');
+    if (varEl && s.demand_variance_pct !== undefined) {
+      varEl.textContent = `${s.demand_variance_pct > 0 ? '+' : ''}${s.demand_variance_pct}% vs ${s.baseline_power_kw} kW baseline`;
+    }
+    const pfEl = document.getElementById('energy-kpi-pf');
+    if (pfEl && s.power_factor !== undefined) pfEl.textContent = `${s.power_factor} PF`;
+    const wstEl = document.getElementById('energy-kpi-wastage');
+    if (wstEl && s.estimated_wastage_kw !== undefined) wstEl.textContent = `Est. Wastage: ${s.estimated_wastage_kw} kW`;
+    const estEl = document.getElementById('energy-kpi-est-savings');
+    if (estEl && s.estimated_monthly_savings_usd !== undefined) estEl.textContent = `$${Number(s.estimated_monthly_savings_usd).toLocaleString()}/mo`;
+    const verEl = document.getElementById('energy-kpi-ver-savings');
+    if (verEl && s.verified_monthly_savings_usd !== undefined) verEl.textContent = `$${Number(s.verified_monthly_savings_usd).toLocaleString()}/mo`;
+
+    const zonesBox = document.getElementById('energy-zone-breakdown-list');
+    if (zonesBox) {
+      const zones = s.zone_breakdown || [];
+      const eqBreak = data.equipment_breakdown || [];
+      zonesBox.innerHTML = zones.map(z => `
+        <div style="background: rgba(15,23,42,0.75); border: 1px solid var(--border-subtle); border-radius: 5px; padding: 0.6rem 0.8rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.82rem;">${escapeHtml(z.name)} (${escapeHtml(z.zone_id)})</div>
+            <div class="mono" style="font-size: 0.7rem; color: var(--text-muted);">Active: ${z.active_kw} kW &bull; Baseline: ${z.baseline_kw} kW</div>
+          </div>
+          <span class="badge ${z.status === 'NOMINAL' ? 'badge-emerald' : 'badge-amber'} mono">${escapeHtml(z.status)}</span>
+        </div>
+      `).join('') + eqBreak.map(e => `
+        <div class="mono" style="font-size: 0.72rem; color: var(--text-muted); padding: 0.3rem 0.5rem; border-left: 2px solid var(--cyan);">
+          ${escapeHtml(e.equipment_id)} (${escapeHtml(e.name)}): <strong>${e.active_power_kw} kW</strong> (${e.utilization_pct}% of rated ${e.rated_power_kw} kW)
+        </div>
+      `).join('');
+    }
+
+    const recList = document.getElementById('energy-recommendations-list');
+    if (recList && Array.isArray(s.recommendations)) {
+      recList.innerHTML = s.recommendations.map(r => `
+        <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 5px; padding: 0.55rem 0.75rem; font-size: 0.78rem; color: #d1fae5;">
+          &bull; ${escapeHtml(r)}
+        </div>
+      `).join('');
+    }
+  } catch (_) {}
+}
+
+async function loadRootCauseInvestigations() {
+  if (typeof window === 'undefined') return;
+  try {
+    const res = await fetch('/api/v1/investigations', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const list = data.investigations || data.items || [];
+    const container = document.getElementById('investigations-container');
+    if (!container) return;
+
+    container.innerHTML = list.map(inv => {
+      const chain = inv.evidence_chain || {};
+      const timeline = Array.isArray(inv.timeline) ? inv.timeline : [];
+      const supp = Array.isArray(inv.supporting_evidence) ? inv.supporting_evidence : [];
+      const contra = Array.isArray(inv.contradictory_evidence) ? inv.contradictory_evidence : [];
+      const steps = Array.isArray(inv.recommended_inspection_steps) ? inv.recommended_inspection_steps : [];
+      return `
+        <div class="vanta-card hud-card">
+          <div class="card-header">
+            <div>
+              <span class="mono" style="color: var(--cyan); font-weight: 800;">${escapeHtml(inv.investigation_id)}</span>
+              <span style="font-weight: 700; color: #fff; font-size: 0.98rem; margin-left: 0.5rem;">${escapeHtml(inv.title)}</span>
+            </div>
+            <span class="badge badge-emerald mono">CONFIDENCE: ${Math.round((inv.confidence_score || 0.9) * 100)}%</span>
+          </div>
+
+          <!-- 8-Stage End-to-End Evidence Chain -->
+          <div class="mono" style="background: rgba(5,11,22,0.85); border: 1px solid var(--border-cyan); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.9rem; font-size: 0.72rem; line-height: 1.55;">
+            <div style="color: var(--cyan); font-weight: 700; margin-bottom: 0.3rem;">TRACEABLE CROSS-SYSTEM EVIDENCE CHAIN:</div>
+            <div><strong>1. Camera:</strong> ${escapeHtml(chain.camera || inv.camera_id)} &rarr; <strong>2. Vision Event:</strong> ${escapeHtml(chain.vision_event || 'Verified')}</div>
+            <div><strong>3. Asset:</strong> ${escapeHtml(chain.asset || inv.target_asset_id)} &rarr; <strong>4. Sensors:</strong> ${escapeHtml((chain.sensors || []).join(', '))}</div>
+            <div><strong>5. Anomaly:</strong> ${escapeHtml(chain.anomaly || '')}</div>
+            <div><strong>6. Recommendation:</strong> ${escapeHtml(chain.recommendation_id || 'MNT-2025-089')} &rarr; <strong>7. Workflow:</strong> ${escapeHtml(chain.workflow_id || 'WF-EXEC-101')}</div>
+          </div>
+
+          <div class="grid-2col" style="margin-bottom: 0.85rem;">
+            <div>
+              <div class="mono" style="font-size: 0.72rem; color: var(--cyan); font-weight: 700; margin-bottom: 0.4rem;">CHRONOLOGICAL MULTI-DOMAIN TIMELINE</div>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                ${timeline.map(t => `
+                  <div class="mono" style="font-size: 0.71rem; background: rgba(15,23,42,0.75); padding: 0.4rem 0.6rem; border-radius: 4px; border-left: 2px solid #c084fc;">
+                    <strong style="color: #c084fc;">[${escapeHtml(t.offset)} • ${escapeHtml(t.domain)}]</strong> ${escapeHtml(t.event)}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div>
+              <div class="mono" style="font-size: 0.72rem; color: #10b981; font-weight: 700; margin-bottom: 0.35rem;">SUPPORTING EVIDENCE (VERIFIED FACTS)</div>
+              <ul style="margin: 0 0 0.65rem 1.1rem; font-size: 0.75rem; color: #d1fae5; line-height: 1.45;">
+                ${supp.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+              </ul>
+              <div class="mono" style="font-size: 0.72rem; color: #f59e0b; font-weight: 700; margin-bottom: 0.35rem;">CONTRADICTORY / RULED-OUT EVIDENCE</div>
+              <ul style="margin: 0 0 0.5rem 1.1rem; font-size: 0.75rem; color: #fde68a; line-height: 1.45;">
+                ${contra.map(c => `<li>${escapeHtml(c)}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+
+          <div style="background: rgba(15,23,42,0.85); border: 1px solid var(--border-subtle); border-radius: 5px; padding: 0.7rem; font-size: 0.78rem;">
+            <div style="color: #fff; margin-bottom: 0.35rem;"><strong>Root-Cause Hypothesis:</strong> ${escapeHtml(inv.root_cause_hypothesis || '')}</div>
+            <div class="mono" style="font-size: 0.71rem; color: var(--cyan); margin-bottom: 0.4rem;">${escapeHtml(inv.correlation_vs_causation_note || '')}</div>
+            <div class="mono" style="font-size: 0.71rem; color: var(--text-muted);">
+              <strong>Recommended Inspection Steps:</strong> ${steps.map(st => escapeHtml(st)).join(' | ')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (_) {}
+}
+
+async function loadWorkflowsAndAgents() {
+  if (typeof window === 'undefined') return;
+  try {
+    const [agRes, wfRes] = await Promise.all([
+      fetch('/api/v1/agents', { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch('/api/v1/workflows', { headers: getAuthHeaders() }).then(r => r.json())
+    ]);
+    const agents = agRes.agents || [];
+    const agGrid = document.getElementById('specialized-agents-grid');
+    if (agGrid) {
+      agGrid.innerHTML = agents.map(a => `
+        <div class="vanta-card" style="padding: 0.75rem; cursor: pointer; border: 1px solid var(--border-subtle);" data-orchestrate-agent="${escapeHtml(a.agent_id)}">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+            <span class="mono" style="font-size: 0.7rem; font-weight: 700; color: var(--cyan);">${escapeHtml(a.agent_id.replace('_AGENT', ''))}</span>
+            <span class="badge badge-emerald mono" style="font-size: 0.6rem;">${escapeHtml(a.status)}</span>
+          </div>
+          <div style="font-weight: 700; color: #fff; font-size: 0.82rem;">${escapeHtml(a.name)}</div>
+          <div class="mono" style="font-size: 0.66rem; color: var(--text-muted); margin-top: 3px;">${escapeHtml(a.domain || '')}</div>
+        </div>
+      `).join('');
+
+      agGrid.querySelectorAll('[data-orchestrate-agent]').forEach(card => {
+        card.addEventListener('click', async () => {
+          const agentId = card.getAttribute('data-orchestrate-agent');
+          const outBox = document.getElementById('agent-orchestration-output');
+          if (outBox) outBox.innerHTML = `<div class="mono" style="font-size:0.75rem;color:var(--cyan);">Orchestrating ${escapeHtml(agentId)}...</div>`;
+          const res = await fetch('/api/v1/agents/orchestrate', {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ agent_id: agentId, query: 'Synthesize domain state with strict fact/estimate separation' })
+          });
+          if (!res.ok) return;
+          const out = await res.json();
+          if (outBox) {
+            outBox.innerHTML = `
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <span class="mono" style="font-weight:800;color:var(--cyan);font-size:0.82rem;">${escapeHtml(out.agent_name)} [${escapeHtml(out.implementation_status)}]</span>
+                <span class="mono" style="font-size:0.7rem;color:var(--text-muted);">Evidence Refs: ${escapeHtml((out.evidence_references || []).join(', '))}</span>
+              </div>
+              <div class="grid-2col" style="gap:0.75rem;font-size:0.74rem;">
+                <div>
+                  <div class="mono" style="color:#10b981;font-weight:700;">1. VERIFIED OBSERVATIONS &amp; DB FACTS:</div>
+                  <div style="color:#d1fae5;margin-bottom:0.4rem;">${(out.verified_observations || []).map(escapeHtml).join('<br>')}</div>
+                  <div class="mono" style="color:var(--cyan);font-weight:700;">2. CALCULATED METRICS &amp; STATISTICAL ESTIMATES:</div>
+                  <div class="mono" style="color:#fff;">Health: ${out.calculated_metrics?.cnc_01_health_score}% &bull; Est. RUL: ${out.statistical_estimates?.cnc_01_rul_estimated_hours}h &bull; Est. Savings: $${out.statistical_estimates?.estimated_monthly_energy_savings_usd}/mo (Verified: $${out.statistical_estimates?.verified_monthly_energy_savings_usd}/mo)</div>
+                </div>
+                <div>
+                  <div class="mono" style="color:#f59e0b;font-weight:700;">3. AI HYPOTHESES (NON-FACTUAL INFERENCE):</div>
+                  <div style="color:#fde68a;margin-bottom:0.4rem;">${(out.ai_hypotheses || []).map(escapeHtml).join('<br>')}</div>
+                  <div class="mono" style="color:#c084fc;font-weight:700;">4. RECOMMENDED ACTIONS:</div>
+                  <div style="color:#fff;">${(out.recommendations || []).map(escapeHtml).join('<br>')}</div>
+                </div>
+              </div>
+            `;
+          }
+        });
+      });
+    }
+
+    const workflows = wfRes.workflows || wfRes.items || [];
+    const pendingBadge = document.getElementById('workflows-pending-badge');
+    if (pendingBadge) {
+      pendingBadge.textContent = `${wfRes.pending_approval_count || 0} PENDING HUMAN APPROVAL`;
+    }
+    const wfContainer = document.getElementById('workflows-list-container');
+    if (wfContainer) {
+      wfContainer.innerHTML = workflows.map(wf => {
+        const isPending = wf.status === 'PENDING_APPROVAL';
+        return `
+          <div style="background: rgba(15,23,42,0.8); border: 1px solid ${isPending ? 'var(--accent-amber)' : 'var(--border-subtle)'}; border-radius: 6px; padding: 0.9rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.45rem;">
+              <div>
+                <span class="mono" style="color: var(--cyan); font-weight: 800;">${escapeHtml(wf.workflow_id)}</span>
+                <span style="font-weight: 700; color: #fff; font-size: 0.92rem; margin-left: 0.45rem;">${escapeHtml(wf.title)}</span>
+              </div>
+              <div style="display: flex; gap: 0.45rem; align-items: center;">
+                <span class="badge ${isPending ? 'badge-amber' : wf.status === 'COMPLETED' ? 'badge-emerald' : 'badge-critical'} mono">${escapeHtml(wf.status)}</span>
+                ${isPending ? `
+                  <button class="btn btn-sm btn-primary mono" data-approve-wf="${escapeHtml(wf.workflow_id)}">Authorize &amp; Execute Work Order</button>
+                  <button class="btn btn-sm btn-danger mono" data-reject-wf="${escapeHtml(wf.workflow_id)}">Reject</button>
+                ` : ''}
+              </div>
+            </div>
+            <div class="mono" style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+              Target Asset: <strong>${escapeHtml(wf.target_asset_id)}</strong> &bull; Equipment: <strong>${escapeHtml(wf.target_equipment_id)}</strong> &bull; Investigation: ${escapeHtml(wf.linked_investigation_id || 'INV-RCA-2025-001')} &bull; Work Order: ${escapeHtml(wf.work_order?.work_order_id || 'WO-2025-901')}
+            </div>
+            <div class="mono" style="font-size: 0.71rem; color: ${isPending ? '#fde68a' : '#10b981'};">
+              Gate Status: ${escapeHtml(wf.approval_state?.decision_notes || 'Human approval gate active')}
+              ${wf.outcome_tracking?.verified_health_delta ? ` &bull; Outcome: ${escapeHtml(wf.outcome_tracking.verified_health_delta)}` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      wfContainer.querySelectorAll('[data-approve-wf]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const wfId = btn.getAttribute('data-approve-wf');
+          const res = await fetch(`/api/v1/workflows/${encodeURIComponent(wfId)}/approve`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ notes: 'Authorized by operator in Command Center UI' })
+          });
+          if (res.ok) {
+            showToast(`Workflow ${wfId} authorized and work order executed`, 'success');
+            loadWorkflowsAndAgents();
+          }
+        });
+      });
+
+      wfContainer.querySelectorAll('[data-reject-wf]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const wfId = btn.getAttribute('data-reject-wf');
+          const res = await fetch(`/api/v1/workflows/${encodeURIComponent(wfId)}/reject`, {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ notes: 'Rejected by operator' })
+          });
+          if (res.ok) {
+            showToast(`Workflow ${wfId} rejected`, 'info');
+            loadWorkflowsAndAgents();
+          }
+        });
+      });
+    }
+  } catch (_) {}
+}
+
+function initVantaInfrastructureOS() {
+  if (typeof window === 'undefined') return;
+
+  const profileSelect = document.getElementById('industry-profile-select');
+  if (profileSelect) {
+    profileSelect.addEventListener('change', async (e) => {
+      const profile_id = e.target.value;
+      const res = await fetch('/api/v1/profiles/select', {
+        method: 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ profile_id })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(`Switched Industry Profile: ${data.active_profile?.name || profile_id}`, 'success');
+        loadFacilitiesAndAssets();
+      }
+    });
+  }
+
+  document.getElementById('btn-refresh-facilities')?.addEventListener('click', loadFacilitiesAndAssets);
+  document.getElementById('btn-refresh-sensors')?.addEventListener('click', loadSensorsAndAdapters);
+  document.getElementById('btn-refresh-equipment')?.addEventListener('click', loadEquipmentAndMaintenance);
+  document.getElementById('btn-refresh-energy')?.addEventListener('click', loadEnergyIntelligence);
+  document.getElementById('btn-refresh-workflows')?.addEventListener('click', loadWorkflowsAndAgents);
+
+  document.getElementById('form-register-asset')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('asset-name-input')?.value?.trim();
+    const facility_id = document.getElementById('asset-facility-select')?.value;
+    const asset_type = document.getElementById('asset-type-select')?.value;
+    const criticality = document.getElementById('asset-criticality-select')?.value;
+    const linked_camera_id = document.getElementById('asset-camera-select')?.value;
+    const res = await fetch('/api/v1/assets', {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ name, facility_id, asset_type, criticality, linked_camera_id })
+    });
+    if (res.ok) {
+      const created = await res.json();
+      showToast(`Registered asset ${created.asset_id}`, 'success');
+      loadFacilitiesAndAssets();
+    }
+  });
+
+  document.getElementById('form-ingest-telemetry')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const sensor_id = document.getElementById('telemetry-sensor-select')?.value;
+    const value = parseFloat(document.getElementById('telemetry-value-input')?.value || '0');
+    const provenance = document.getElementById('telemetry-provenance-select')?.value;
+    const res = await fetch('/api/v1/telemetry/ingest', {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ sensor_id, value, provenance })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const fb = document.getElementById('telemetry-ingest-feedback');
+      if (fb) {
+        fb.textContent = `Ingested ${data.reading?.reading_id}: Anomaly=${data.anomaly_evaluation?.is_anomaly} (${data.anomaly_evaluation?.threshold_breach}) • Equipment Health=${data.updated_equipment_health?.health_score ?? 'N/A'}%`;
+      }
+      showToast(`Ingested ${sensor_id}=${value} (${data.anomaly_evaluation?.severity})`, data.anomaly_evaluation?.is_anomaly ? 'warning' : 'success');
+      loadSensorsAndAdapters();
+    }
+  });
+
+  document.getElementById('form-energy-optimize')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const active_power_kw = parseFloat(document.getElementById('energy-input-kw')?.value || '468');
+    const power_factor = parseFloat(document.getElementById('energy-input-pf')?.value || '0.95');
+    const idle_equipment_kw = parseFloat(document.getElementById('energy-input-idle')?.value || '6');
+    const res = await fetch('/api/v1/energy/optimize', {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ active_power_kw, power_factor, idle_equipment_kw })
+    });
+    if (res.ok) {
+      showToast('Applied energy optimization parameters & recalculated savings', 'success');
+      loadEnergyIntelligence();
+    }
+  });
+
+  document.getElementById('btn-run-rca-investigation')?.addEventListener('click', async () => {
+    const equipment_id = document.getElementById('rca-equipment-select')?.value || 'EQ-CNC-01';
+    const res = await fetch('/api/v1/investigations/correlate', {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ equipment_id })
+    });
+    if (res.ok) {
+      const inv = await res.json();
+      showToast(`Correlated 8-domain investigation ${inv.investigation_id}`, 'success');
+      loadRootCauseInvestigations();
+    }
+  });
+
+  document.getElementById('btn-stage-new-workflow')?.addEventListener('click', async () => {
+    const res = await fetch('/api/v1/workflows', {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        template_id: 'WF-TPL-MAINT-ISOLATION',
+        target_asset_id: 'AST-CNC-SPINDLE-01',
+        target_equipment_id: 'EQ-CNC-01'
+      })
+    });
+    const data = await res.json();
+    if (res.status === 409) {
+      showToast(`Duplicate-Action Protection: ${data.detail}`, 'warning');
+      return;
+    }
+    if (res.ok) {
+      showToast(`Staged workflow ${data.workflow_id} at Human Approval Gate`, 'success');
+      loadWorkflowsAndAgents();
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    initVantaInfrastructureOS();
+  });
+  window.loadFacilitiesAndAssets = loadFacilitiesAndAssets;
+  window.loadSensorsAndAdapters = loadSensorsAndAdapters;
+  window.loadEquipmentAndMaintenance = loadEquipmentAndMaintenance;
+  window.loadEnergyIntelligence = loadEnergyIntelligence;
+  window.loadRootCauseInvestigations = loadRootCauseInvestigations;
+  window.loadWorkflowsAndAgents = loadWorkflowsAndAgents;
+}
+
 // Node.js CommonJS export for automated unit and integration testing
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -7899,6 +8592,12 @@ if (typeof module !== 'undefined' && module.exports) {
     renderQuadMatrixFeed,
     playJarvisHudChime,
     computeSemanticIntentSimilarity,
-    synthesizeJarvisResponse
+    synthesizeJarvisResponse,
+    loadFacilitiesAndAssets,
+    loadSensorsAndAdapters,
+    loadEquipmentAndMaintenance,
+    loadEnergyIntelligence,
+    loadRootCauseInvestigations,
+    loadWorkflowsAndAgents
   };
 }
